@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Middle School STREAM High Scores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout: arcade high-score cabinet — header, podium, live race board, award cards. Single dark theme on purpose. */
+:root{
+  --bg:#060b1d; --panel:#0c1530; --line:#1d2b55; --ink:#eef3ff; --dim:#8c9cc8;
+  --blue:#3f8cff; --gold:#ffd23f; --silver:#c9d3e8; --bronze:#e08a4c; --green:#4cf0a0; --pink:#ff4f8b;
+  --pixel:'Silkscreen', 'Courier New', monospace; --body:'Chakra Petch', system-ui, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh;
+  background-image:radial-gradient(ellipse at 50% -10%, #12306e 0%, transparent 55%),
+  repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 4px);}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+.eyebrow{font-family:var(--pixel);font-size:14px;letter-spacing:.12em;color:var(--blue)}
+h1{font-family:var(--pixel);font-weight:700;font-size:clamp(34px,6vw,64px);line-height:1;margin:.15em 0 .1em;
+  text-shadow:0 0 18px rgba(63,140,255,.55),3px 3px 0 #10225a}
+h1 .accent{color:var(--gold);text-shadow:0 0 18px rgba(255,210,63,.5),3px 3px 0 #5a4300}
+.sub{color:var(--dim);font-size:15px}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+button,.btn{font-family:var(--pixel);font-size:13px;letter-spacing:.06em;background:var(--panel);color:var(--ink);
+  border:2px solid var(--line);padding:10px 14px;border-radius:6px;cursor:pointer}
+button:hover{border-color:var(--blue)} button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.round{font-family:var(--pixel);font-size:clamp(14px,2vw,20px);color:var(--gold);min-height:1.6em;margin:6px 0 10px;letter-spacing:.06em}
+.round .of{color:var(--dim)}
+/* podium */
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:end;margin:8px 0 26px;min-height:230px}
+.step{text-align:center;opacity:0;transform:translateY(40px);transition:opacity .6s, transform .7s cubic-bezier(.2,1.4,.4,1)}
+.step.show{opacity:1;transform:none}
+.step .who{font-weight:700;font-size:clamp(16px,2.2vw,24px);margin-bottom:6px;min-width:0;overflow-wrap:anywhere}
+.step .xp{font-family:var(--pixel);color:var(--dim);font-size:13px;margin-bottom:8px}
+.block{border-radius:8px 8px 0 0;display:grid;place-items:center;font-family:var(--pixel);font-size:44px;color:#0b1020;border:3px solid rgba(255,255,255,.25)}
+.p1 .block{height:170px;background:linear-gradient(180deg,#ffe27a,var(--gold));box-shadow:0 0 40px rgba(255,210,63,.45)}
+.p2 .block{height:125px;background:linear-gradient(180deg,#eef2fb,var(--silver))}
+.p3 .block{height:95px;background:linear-gradient(180deg,#f2ae7c,var(--bronze))}
+.p1{order:2}.p2{order:1}.p3{order:3}
+.crown{font-family:var(--pixel);color:var(--gold);font-size:13px;letter-spacing:.1em;margin-bottom:4px}
+/* board */
+.board{position:relative;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:10px;overflow:hidden}
+.row{position:absolute;left:10px;right:10px;height:52px;display:grid;grid-template-columns:52px minmax(0,1.3fr) minmax(0,3fr) 92px;
+  align-items:center;gap:12px;padding:0 10px;border-radius:6px;transition:transform .45s cubic-bezier(.3,1.2,.4,1);will-change:transform}
+.row:nth-child(odd){background:rgba(255,255,255,.02)}
+.rank{font-family:var(--pixel);font-size:20px;color:var(--dim);text-align:center}
+.row.r1 .rank{color:var(--gold)} .row.r2 .rank{color:var(--silver)} .row.r3 .rank{color:var(--bronze)}
+.name{font-weight:600;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{height:22px;background:#081029;border-radius:4px;overflow:hidden;position:relative}
+.bar{height:100%;display:flex;border-radius:4px;overflow:hidden;width:0}
+.seg{height:100%}
+.s0{background:var(--blue)}.s1{background:var(--green)}.s2{background:var(--gold)}.s3{background:var(--pink)}
+.xpv{font-family:var(--pixel);font-size:18px;text-align:right;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:22px 4px 10px;color:var(--dim);font-size:14px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+/* awards */
+h2{font-family:var(--pixel);font-size:20px;letter-spacing:.08em;margin:0 0 12px}
+.awards{min-height:96px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.award{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:14px;opacity:0;transform:scale(.9);transition:opacity .5s, transform .5s}
+.award.show{opacity:1;transform:none}
+.award .t{font-family:var(--pixel);font-size:13px;color:var(--gold);letter-spacing:.06em}
+.award .n{font-weight:700;font-size:20px;margin:6px 0 2px;overflow-wrap:anywhere}
+.award .v{color:var(--dim);font-size:14px}
+.formula{color:var(--dim);font-size:14px;margin-top:22px;line-height:1.5}
+/* settings drawer */
+.drawer{position:fixed;inset:0 0 0 auto;width:min(380px,100%);background:#0a1330;border-left:2px solid var(--line);padding:20px;overflow:auto;z-index:20;transform:translateX(100%);transition:transform .3s}
+.drawer.open{transform:none}
+.drawer h3{font-family:var(--pixel);font-size:16px;margin:0 0 14px}
+.field{display:grid;gap:6px;margin-bottom:14px;font-size:14px;color:var(--dim)}
+select,input[type=number]{font:inherit;background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:6px;padding:8px}
+.weights{display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center}
+.note{font-size:13px;color:var(--dim);line-height:1.45}
+#status{color:var(--green);font-size:13px;min-height:1.2em}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
+@media (max-width:640px){.row{grid-template-columns:36px minmax(0,1fr) 70px;}.track{display:none}.podium{min-height:190px}.p1 .block{height:120px}.p2 .block{height:90px}.p3 .block{height:70px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">DONOVAN CATHOLIC</div>
+      <h1>MIDDLE SCHOOL STREAM<br><span class="accent">HIGH SCORES</span></h1>
+      <div class="sub" id="sub">Khan Academy · Aug 2 – Oct 1, 2026</div>
+    </div>
+    <div class="controls">
+      <button class="primary" id="replay">▶ REPLAY</button>
+      <button id="full">FULLSCREEN</button>
+      <button id="gear" aria-expanded="false" aria-controls="drawer">SETTINGS</button>
+    </div>
+  </header>
+
+  <div class="round" id="round" aria-live="polite"></div>
+  <section class="podium" id="podium" aria-label="Top three"></section>
+  <h2>CLASS AWARDS</h2>
+  <section class="awards" id="awards"></section>
+  <div class="legend">
+    <span><i class="s0"></i>Time on task</span><span><i class="s1"></i>Skills leveled up</span>
+    <span><i class="s2"></i>Skills Proficient+</span><span><i class="s3"></i>Assignments done</span>
+  </div>
+  <section class="board" id="board" aria-label="Leaderboard"></section>
+  <p class="formula" id="formula"></p>
+</div>
+
+<aside class="drawer" id="drawer" aria-label="Settings">
+  <h3>SETTINGS</h3>
+  <label class="field">Show
+    <select id="topN"><option value="5">Top 5</option><option value="10" selected>Top 10</option><option value="999">Whole class</option></select>
+  </label>
+  <label class="field">Names
+    <select id="nameStyle">
+      <option value="first">First name + last initial</option>
+      <option value="full">Full name</option>
+      <option value="initials">Initials only</option>
+      <option value="player">Player numbers (no names)</option>
+    </select>
+  </label>
+  <div class="field">XP per…
+    <div class="weights">
+      <span>Minute on task</span><input type="number" id="w0" min="0" step="1" value="1">
+      <span>Skill leveled up</span><input type="number" id="w1" min="0" step="1" value="10">
+      <span>Skill Proficient+</span><input type="number" id="w2" min="0" step="1" value="10">
+      <span>Assignment done</span><input type="number" id="w3" min="0" step="1" value="15">
+    </div>
+  </div>
+  <div class="field">Update with new Khan Academy exports
+    <span class="note">Activity report: save the report page (Ctrl+S, "Webpage, HTML only"). Assignment scores: the .csv or .xlsx download.</span>
+    <label class="btn" for="fHtml">Load activity report (.html)</label><input type="file" id="fHtml" accept=".html,.htm" hidden>
+    <label class="btn" for="fXlsx">Load assignment scores (.csv or .xlsx)</label><input type="file" id="fXlsx" accept=".xlsx,.csv" hidden>
+    <span id="status"></span>
+  </div>
+  <button id="reset">Reset to Oct 1 data</button>
+  <button id="close" style="margin-left:8px">Close</button>
+</aside>
+
+<script>
+const SAMPLE = {"range": "Aug 2 – Oct 1, 2026", "students": [{"name": "(Alex) Zandra Daltro", "min": 6, "lvl": 0, "pro": 0, "done": 0, "avg": null}, {"name": "Alan Gallegos", "min": 180, "lvl": 4, "pro": 4, "done": 4, "avg": null}, {"name": "Azu Diaz", "min": 137, "lvl": 4, "pro": 4, "done": 4, "avg": null}, {"name": "Camilla Dominguez", "min": 355, "lvl": 30, "pro": 30, "done": 24, "avg": 19}, {"name": "Dax Capuzzo", "min": 121, "lvl": 21, "pro": 21, "done": 0, "avg": null}, {"name": "Gabriela Diaz Reyes", "min": 129, "lvl": 0, "pro": 0, "done": 12, "avg": null}, {"name": "Juddy Blount", "min": 281, "lvl": 16, "pro": 16, "done": 0, "avg": null}, {"name": "Nyomi Johnson", "min": 97, "lvl": 2, "pro": 2, "done": 0, "avg": null}, {"name": "Obed Lemus-Palma", "min": 139, "lvl": 5, "pro": 2, "done": 1, "avg": null}]};
+const KEYS = ['min','lvl','pro','done'];
+const ROUNDS = ['TIME ON TASK','SKILLS LEVELED UP','SKILLS PROFICIENT+','ASSIGNMENTS DONE'];
+const ROW_H = 58, ROUND_MS = 2200;
+const $ = id => document.getElementById(id);
+const store = { get(k){ try{return JSON.parse(localStorage.getItem('mslb2:'+k))}catch(e){return null} },
+                set(k,v){ try{localStorage.setItem('mslb2:'+k, JSON.stringify(v))}catch(e){} } };
+let data = store.get('data') || SAMPLE;
+let settings = Object.assign({topN:10, nameStyle:'first', w:[1,10,10,15]}, store.get('settings') || {});
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function displayName(s, i){
+  // "(Alex) Zandra Daltro" -> preferred first name "Alex"
+  const pm = s.name.trim().match(/^\((.+?)\)\s*(.+)$/);
+  const parts = pm ? [pm[1], ...pm[2].split(/\s+/).slice(1)] : s.name.trim().split(/\s+/);
+  switch(settings.nameStyle){
+    case 'full': return parts.join(' ');
+    case 'initials': return parts.map(p=>p[0]).join('').toUpperCase();
+    case 'player': return 'PLAYER ' + String(i+1).padStart(2,'0');
+    default: return parts[0] + (parts.length>1 ? ' ' + parts[1][0] + '.' : '');
+  }
+}
+const comp = s => KEYS.map((k,i)=> (s[k]||0) * settings.w[i]);
+const total = s => comp(s).reduce((a,b)=>a+b,0);
+
+let anim = null;
+function build(){
+  if (anim) cancelAnimationFrame(anim);
+  $('sub').textContent = 'Khan Academy · ' + (data.range || '');
+  const all = data.students.map(s => ({...s, xp: total(s), parts: comp(s)}));
+  // player numbers are assigned by final rank so they stay stable
+  const ranked = [...all].sort((a,b)=> b.xp - a.xp || a.name.localeCompare(b.name));
+  ranked.forEach((s,i)=> s.label = displayName(s,i));
+  const shown = ranked.filter(s=> s.xp > 0).slice(0, settings.topN);
+  const max = Math.max(1, ...shown.map(s=>s.xp));
+  const board = $('board'); board.innerHTML = '';
+  board.style.height = (shown.length * ROW_H + 20) + 'px';
+  // start in alphabetical order
+  const start = [...shown].sort((a,b)=> a.name.localeCompare(b.name));
+  start.forEach((s,i)=>{
+    const r = document.createElement('div'); r.className='row';
+    r.innerHTML = `<div class="rank"></div><div class="name"></div><div class="track"><div class="bar">${[0,1,2,3].map(k=>`<div class="seg s${k}"></div>`).join('')}</div></div><div class="xpv">0</div>`;
+    r.querySelector('.name').textContent = s.label;
+    r.style.top = '10px'; r.style.transform = `translateY(${i*ROW_H}px)`;
+    board.appendChild(r); s.el = r;
+  });
+  $('podium').innerHTML = ''; $('awards').innerHTML='';
+  const [w0,w1,w2,w3] = settings.w;
+  $('formula').textContent = `XP = ${w0} per minute on task + ${w1} per skill leveled up + ${w2} per skill Proficient+ + ${w3} per assignment completed. Ties go alphabetical.`;
+  const active = [0,1,2,3].filter(k=> shown.some(s=> s.parts[k] > 0));
+  run(shown, max, ranked, active.length ? active : [0]);
+}
+
+function paint(shown, max, round, p){
+  const vals = shown.map(s=>{
+    const seg = s.parts.map((v,k)=> k<round ? v : k===round ? v*p : 0);
+    return {s, seg, v: seg.reduce((a,b)=>a+b,0)};
+  });
+  vals.sort((a,b)=> b.v - a.v || a.s.name.localeCompare(b.s.name));
+  vals.forEach((o,rank)=>{
+    const el = o.s.el;
+    el.style.transform = `translateY(${rank*ROW_H}px)`;
+    el.className = 'row' + (rank<3 && o.v>0 ? ' r'+(rank+1) : '');
+    el.querySelector('.rank').textContent = rank+1;
+    el.querySelector('.xpv').textContent = Math.round(o.v).toLocaleString();
+    el.querySelector('.bar').style.width = (o.v/max*100) + '%';
+    el.querySelectorAll('.seg').forEach((sg,k)=> sg.style.width = (o.v ? o.seg[k]/o.v*100 : 0) + '%');
+  });
+}
+
+function run(shown, max, ranked, active){
+  const t0 = performance.now();
+  const ease = x => 1 - Math.pow(1-x, 3);
+  if (reduce){ paint(shown,max,4,1); $('round').innerHTML='FINAL SCORES'; finish(shown, ranked); return; }
+  function tick(now){
+    const el = now - t0, idx = Math.floor(el/ROUND_MS), p = ease(Math.min(1,(el % ROUND_MS)/ROUND_MS));
+    if (idx >= active.length){ paint(shown,max,4,1); $('round').innerHTML='FINAL SCORES'; finish(shown, ranked); return; }
+    const round = active[idx];
+    $('round').innerHTML = `ROUND ${idx+1}<span class="of"> / ${active.length}</span> · ${ROUNDS[round]}`;
+    paintActive(shown, max, active, idx, p);
+    anim = requestAnimationFrame(tick);
+  }
+  anim = requestAnimationFrame(tick);
+}
+function paintActive(shown, max, active, idx, p){
+  // components in finished rounds count fully, the current one partly, later ones not at all
+  const done = new Set(active.slice(0, idx));
+  const cur = active[idx];
+  const vals = shown.map(s=>{
+    const seg = s.parts.map((v,k)=> done.has(k) ? v : k===cur ? v*p : 0);
+    return {s, seg, v: seg.reduce((a,b)=>a+b,0)};
+  });
+  vals.sort((a,b)=> b.v - a.v || a.s.name.localeCompare(b.s.name));
+  vals.forEach((o,rank)=>{
+    const el = o.s.el;
+    el.style.transform = `translateY(${rank*ROW_H}px)`;
+    el.className = 'row' + (rank<3 && o.v>0 ? ' r'+(rank+1) : '');
+    el.querySelector('.rank').textContent = rank+1;
+    el.querySelector('.xpv').textContent = Math.round(o.v).toLocaleString();
+    el.querySelector('.bar').style.width = (o.v/max*100) + '%';
+    el.querySelectorAll('.seg').forEach((sg,k)=> sg.style.width = (o.v ? o.seg[k]/o.v*100 : 0) + '%');
+  });
+}
+
+function finish(shown, ranked){
+  const pod = $('podium');
+  ranked.slice(0,3).forEach((s,i)=>{
+    const d = document.createElement('div'); d.className = 'step p'+(i+1);
+    d.innerHTML = `${i===0?'<div class="crown">CHAMPION</div>':''}<div class="who"></div><div class="xp">${s.xp.toLocaleString()} XP</div><div class="block">${i+1}</div>`;
+    d.querySelector('.who').textContent = s.label;
+    pod.appendChild(d);
+    setTimeout(()=> d.classList.add('show'), reduce?0: [400,200,0][i]);
+  });
+  if (!reduce) setTimeout(confetti, 450);
+  // awards across the whole class
+  const best = (key, filter=()=>true) => {
+    const c = ranked.filter(s=> filter(s) && (s[key]||0) > 0);
+    if (!c.length) return null;
+    return c.reduce((a,b)=> (b[key] > a[key] || (b[key]===a[key] && b.name.localeCompare(a.name)<0)) ? b : a);
+  };
+  const A = [
+    ['TIME LORD','min', s=>`${s.min.toLocaleString()} minute${s.min===1?"":"s"} on task`],
+    ['SKILL HUNTER','lvl', s=>`${s.lvl} skill${s.lvl===1?"":"s"} leveled up`],
+    ['MASTERY MAGE','pro', s=>`${s.pro} skill${s.pro===1?"":"s"} at Proficient+`],
+    ['ASSIGNMENT ACE','done', s=>`${s.done} assignment${s.done===1?"":"s"} completed`],
+    ['SHARPSHOOTER','avg', s=>`${s.avg}% average assignment score`, s=> s.avg!=null && s.done>=5 && s.avg>=70],
+  ];
+  A.forEach(([t,k,fmt,f],i)=>{
+    const w = best(k,f); if(!w) return;
+    const c = document.createElement('div'); c.className='award';
+    c.innerHTML = `<div class="t">${t}</div><div class="n"></div><div class="v">${fmt(w)}</div>`;
+    c.querySelector('.n').textContent = w.label;
+    $('awards').appendChild(c);
+    setTimeout(()=>c.classList.add('show'), reduce?0:700+i*180);
+  });
+}
+
+// confetti
+const cv = $('fx'), cx = cv.getContext('2d'); let parts=[];
+function confetti(){
+  cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ['#ffd23f','#3f8cff','#4cf0a0','#ff4f8b','#ffffff'];
+  for(let i=0;i<180;i++) parts.push({x:innerWidth/2+(Math.random()-.5)*300,y:innerHeight*.35,vx:(Math.random()-.5)*14,vy:-Math.random()*14-4,
+    s:Math.random()*8+4,c:cols[i%5],r:Math.random()*6,vr:(Math.random()-.5)*.4,life:0});
+  let n=0;(function f(){cx.clearRect(0,0,cv.width,cv.height);parts.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.life++;
+    cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);cx.restore();});
+    parts=parts.filter(p=>p.y<cv.height+40&&p.life<240); if(parts.length&&n++<400) requestAnimationFrame(f); else cx.clearRect(0,0,cv.width,cv.height);})();
+}
+
+// file parsing
+function tokensFromHtml(text){
+  const doc = new DOMParser().parseFromString(text,'text/html');
+  doc.querySelectorAll('script,style,noscript').forEach(n=>n.remove());
+  const out=[], w = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  while(w.nextNode()){ const t=w.currentNode.nodeValue.trim(); if(t) out.push(t); }
+  return out;
+}
+function parseActivity(text){
+  const t = tokensFromHtml(text);
+  const i0 = t.lastIndexOf('Skills to Proficient+'); if (i0<0) throw new Error('Could not find the activity table in that file.');
+  const res = {}; let i=i0+1; const num = x=>/^[\d,]+$/.test(x);
+  while(i+4<t.length && num(t[i+1])&&num(t[i+2])&&num(t[i+3])&&num(t[i+4])){
+    const n=k=>+t[i+k].replace(/,/g,''); res[t[i].replace(/\s+/g,' ')]={min:n(1),lvl:n(3),pro:n(4)}; i+=5;
+  }
+  const ri = t.indexOf('Date range'); const range = ri>=0 ? t[ri+1] : null;
+  if (!Object.keys(res).length) throw new Error('No student rows found in the activity report.');
+  return {res, range};
+}
+function parseScores(buf){
+  const wb = XLSX.read(buf,{type:'array', raw:false}); const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:null});
+  const res = {};
+  rows.slice(2).forEach(r=>{ if(!r[0]) return;
+    const done = r.slice(3).filter(v=> v==='Completed' || typeof v==='number' || /^\s*\d+(\.\d+)?\s*$/.test(String(v??''))).length;
+    const a = typeof r[1]==='number' ? r[1] : (/^\s*\d+(\.\d+)?\s*$/.test(String(r[1]??'')) ? +r[1] : null);
+    res[String(r[0]).replace(/\s+/g,' ').trim()] = {done, avg: a};
+  });
+  if (!Object.keys(res).length) throw new Error('No student rows found in the spreadsheet.');
+  return res;
+}
+function merge(act, sc, range){
+  const names = new Set([...data.students.map(s=>s.name), ...Object.keys(act||{}), ...Object.keys(sc||{})]);
+  const old = Object.fromEntries(data.students.map(s=>[s.name,s]));
+  data = {range: range || data.range, students:[...names].map(n=>({name:n, min:0,lvl:0,pro:0,done:0,avg:null, ...(old[n]||{}), ...(act&&act[n]||{}), ...(sc&&sc[n]||{})}))};
+  store.set('data', data); build();
+}
+$('fHtml').onchange = e=>{ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{
+  try{ const {res,range}=parseActivity(t); merge(res,null,range); $('status').textContent=`Loaded ${Object.keys(res).length} students from ${f.name}`; }
+  catch(err){ $('status').textContent=err.message; } }); };
+$('fXlsx').onchange = e=>{ const f=e.target.files[0]; if(!f) return;
+  if (typeof XLSX==='undefined'){ $('status').textContent='The spreadsheet reader did not load. Check your internet connection and reopen the page.'; return; }
+  f.arrayBuffer().then(b=>{ try{ const res=parseScores(b); merge(null,res); $('status').textContent=`Loaded ${Object.keys(res).length} students from ${f.name}`; }
+  catch(err){ $('status').textContent=err.message; } }); };
+
+// controls
+function syncInputs(){ $('topN').value=settings.topN; $('nameStyle').value=settings.nameStyle; settings.w.forEach((v,i)=>$('w'+i).value=v); }
+function saveSettings(){ store.set('settings', settings); build(); }
+$('topN').onchange = e=>{ settings.topN=+e.target.value; saveSettings(); };
+$('nameStyle').onchange = e=>{ settings.nameStyle=e.target.value; saveSettings(); };
+[0,1,2,3].forEach(i=> $('w'+i).onchange = e=>{ settings.w[i]=Math.max(0,+e.target.value||0); saveSettings(); });
+$('reset').onclick = ()=>{ data=SAMPLE; store.set('data',null); $('status').textContent='Back to the Oct 1 data.'; build(); };
+$('replay').onclick = build;
+$('gear').onclick = ()=>{ const o=$('drawer').classList.toggle('open'); $('gear').setAttribute('aria-expanded',o); };
+$('close').onclick = ()=>{ $('drawer').classList.remove('open'); $('gear').setAttribute('aria-expanded','false'); };
+$('full').onclick = ()=>{ const d=document.documentElement; (document.fullscreenElement? document.exitFullscreen(): d.requestFullscreen?.())?.catch?.(()=>{}); };
+syncInputs(); build();
+</script>
+<script src="../tour-agent.js"></script>
+</body>
+</html>

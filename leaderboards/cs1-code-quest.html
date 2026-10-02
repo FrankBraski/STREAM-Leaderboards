@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Donovan CS1 Code Quest Leaderboard</title>
+<style>
+:root {
+  --bg:#070b18; --panel:#11182c; --panel2:#17203a; --text:#f6f7fb; --muted:#9fb0cc;
+  --cyan:#27d7ff; --gold:#ffd84d; --silver:#d8e1ee; --bronze:#e7a46d; --green:#43e28f;
+  --red:#ff5c73; --navy:#102447;
+}
+*{box-sizing:border-box}
+body{margin:0;background:
+radial-gradient(circle at 15% 5%,#183d68 0,transparent 32%),
+radial-gradient(circle at 90% 15%,#4c164b 0,transparent 28%),
+linear-gradient(145deg,#050814,#0b1020 55%,#050814);
+color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;min-height:100vh;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;background-image:
+linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),
+linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:40px 40px}
+.wrap{width:min(1500px,96vw);margin:0 auto;padding:24px}
+header{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:18px}
+h1{margin:0;font-size:clamp(30px,4vw,62px);letter-spacing:-2px;line-height:1}
+.sub{color:var(--muted);margin-top:8px;font-size:14px}
+.logo{font-weight:900;color:var(--cyan);letter-spacing:2px;font-size:14px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+button{background:#17213c;color:white;border:1px solid #304266;border-radius:999px;padding:10px 14px;font-weight:700;cursor:pointer;transition:.2s}
+button:hover,button.active{background:#24436b;border-color:var(--cyan);transform:translateY(-1px);box-shadow:0 0 18px rgba(39,215,255,.2)}
+.hero{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:14px;align-items:end;margin:20px 0 28px}
+.podium{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:18px;text-align:center;position:relative;overflow:hidden;min-height:188px;animation:float 4s ease-in-out infinite}
+.podium.first{min-height:225px;border-color:rgba(255,216,77,.6);box-shadow:0 0 35px rgba(255,216,77,.12)}
+.podium .rank{font-size:34px}
+.podium .name{font-size:22px;font-weight:900;margin:8px 0}
+.podium .score{font-size:34px;font-weight:1000}
+.podium .metric{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+.first .score{color:var(--gold)} .second .score{color:var(--silver)} .third .score{color:var(--bronze)}
+@keyframes float{50%{transform:translateY(-5px)}}
+.panel{background:rgba(13,20,39,.84);border:1px solid rgba(255,255,255,.12);border-radius:22px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.panelhead{display:grid;grid-template-columns:70px 1.5fr 2fr 130px;gap:12px;padding:13px 18px;color:#93a4c3;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;background:rgba(255,255,255,.03)}
+.row{display:grid;grid-template-columns:70px 1.5fr 2fr 130px;gap:12px;align-items:center;padding:12px 18px;border-top:1px solid rgba(255,255,255,.06);transition:transform .45s cubic-bezier(.2,.8,.2,1),background .2s;position:relative}
+.row:hover{background:rgba(39,215,255,.06);transform:scale(1.003)}
+.place{font-size:20px;font-weight:1000;color:#a9b9d7}
+.student{font-size:18px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barwrap{height:14px;background:#09101f;border-radius:999px;overflow:hidden;position:relative}
+.bar{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#19bfe5,#53efac);box-shadow:0 0 16px rgba(39,215,255,.25);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.value{text-align:right;font-size:20px;font-weight:950}
+.badges{display:flex;gap:7px;margin-top:5px;flex-wrap:wrap}
+.badge{font-size:10px;padding:3px 7px;border-radius:999px;background:#1b2949;color:#bdd2f4;border:1px solid #2d416b}
+.foot{display:flex;justify-content:space-between;gap:14px;margin-top:14px;color:#8da0bf;font-size:12px;flex-wrap:wrap}
+.flash{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.confetti{position:absolute;top:-20px;width:9px;height:16px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(900deg);opacity:.1}}
+.ticker{margin:10px 0 18px;padding:10px 14px;border-radius:14px;background:#0c1830;border:1px solid #21365a;color:#c8daf7;font-weight:700}
+.small{font-size:11px;color:#7890b5}
+@media(max-width:800px){
+ header{align-items:flex-start;flex-direction:column} .controls{justify-content:flex-start}
+ .hero{grid-template-columns:1fr} .first{order:-1}
+ .panelhead,.row{grid-template-columns:48px 1.6fr 1fr 90px}
+ .barwrap{display:block} .student{font-size:14px} .value{font-size:15px}
+}
+</style>
+</head>
+<body>
+<div class="flash" id="flash"></div>
+<div class="wrap">
+<header>
+  <div>
+    <div class="logo">DONOVAN CATHOLIC • COMPUTER SCIENCE I</div>
+    <h1>⚡ CODE QUEST LEADERBOARD</h1>
+    <div class="sub">Khan Academy • Activity through Oct. 1, 2026 • Learn. Build. Level Up.</div>
+  </div>
+  <div class="controls">
+    <button class="active" data-mode="xp">🏆 Overall XP</button>
+    <button data-mode="minutes">⏱ Time</button>
+    <button data-mode="proficient">🧠 Skills</button>
+    <button data-mode="complete">🚀 Completion</button>
+    <button data-mode="avg">🎯 Avg Score</button>
+    <button id="privacy">👁 Names On</button>
+    <button id="cycle">▶ Auto-Cycle</button>
+  </div>
+</header>
+
+<div class="ticker" id="ticker">Overall XP = 1 × minute + 20 × Proficient+ skill + 30 × assignment completion percentage point. Average score is shown separately because not every student has one yet.</div>
+
+<div class="hero">
+  <div class="podium second" id="p2"></div>
+  <div class="podium first" id="p1"></div>
+  <div class="podium third" id="p3"></div>
+</div>
+
+<div class="panel">
+  <div class="panelhead"><div>Rank</div><div>Coder</div><div>Progress</div><div style="text-align:right">Result</div></div>
+  <div id="board"></div>
+</div>
+<div class="foot">
+ <div>🔥 Badges highlight standout effort — not grades.</div>
+ <div>Tip: press <b>F11</b> for full-screen classroom display.</div>
+</div>
+</div>
+
+<script>
+const students = [{"name": "Angel Lagardera", "minutes": 136, "worked": 4, "leveled": 3, "proficient": 3, "complete": 5.0, "avg": 26.0, "xp": 346}, {"name": "Antonia Lutz", "minutes": 718, "worked": 21, "leveled": 9, "proficient": 5, "complete": 23.0, "avg": 52.0, "xp": 1508}, {"name": "Avery Weaver", "minutes": 114, "worked": 7, "leveled": 7, "proficient": 7, "complete": 9.0, "avg": 35.0, "xp": 524}, {"name": "Catherine Ridley", "minutes": 107, "worked": 10, "leveled": 9, "proficient": 8, "complete": 3.0, "avg": null, "xp": 357}, {"name": "Cooper Wilson", "minutes": 376, "worked": 27, "leveled": 26, "proficient": 26, "complete": 2.0, "avg": null, "xp": 956}, {"name": "Dioner Gonzalez-Amaya", "minutes": 573, "worked": 44, "leveled": 40, "proficient": 40, "complete": 3.0, "avg": null, "xp": 1463}, {"name": "Eden Etheridge", "minutes": 226, "worked": 12, "leveled": 10, "proficient": 9, "complete": 11.0, "avg": 81.0, "xp": 736}, {"name": "Frandy Rodas", "minutes": 7, "worked": 0, "leveled": 0, "proficient": 0, "complete": null, "avg": null, "xp": 7}, {"name": "Jaylan Esquivel", "minutes": 382, "worked": 41, "leveled": 40, "proficient": 38, "complete": 12.0, "avg": 26.0, "xp": 1502}, {"name": "Joseph Willis", "minutes": 243, "worked": 2, "leveled": 1, "proficient": 1, "complete": 5.0, "avg": null, "xp": 413}, {"name": "Juan Suarez-Rico", "minutes": 484, "worked": 34, "leveled": 33, "proficient": 33, "complete": null, "avg": null, "xp": 1144}, {"name": "Julie Ortiz", "minutes": 523, "worked": 26, "leveled": 22, "proficient": 22, "complete": 6.0, "avg": 50.0, "xp": 1143}, {"name": "Karter Burris", "minutes": 136, "worked": 3, "leveled": 2, "proficient": 2, "complete": 2.0, "avg": 13.0, "xp": 236}, {"name": "Kelsie Nguyen", "minutes": 114, "worked": 10, "leveled": 9, "proficient": 9, "complete": 19.0, "avg": 26.0, "xp": 864}, {"name": "Melanie Inestra", "minutes": 429, "worked": 12, "leveled": 9, "proficient": 9, "complete": 7.0, "avg": null, "xp": 819}, {"name": "Moserat Nodine", "minutes": 315, "worked": 26, "leveled": 25, "proficient": 22, "complete": 2.0, "avg": null, "xp": 815}, {"name": "Owen Powers", "minutes": 273, "worked": 21, "leveled": 20, "proficient": 16, "complete": 6.0, "avg": 13.0, "xp": 773}, {"name": "Reed Plummer", "minutes": 198, "worked": 8, "leveled": 8, "proficient": 7, "complete": 4.0, "avg": null, "xp": 458}, {"name": "Santiago Parra", "minutes": 199, "worked": 4, "leveled": 4, "proficient": 4, "complete": 20.0, "avg": 35.0, "xp": 879}];
+const labels = {
+ xp:["Overall XP","XP"], minutes:["Time on Task","min"], proficient:["Skills to Proficient+","skills"],
+ complete:["Assignment Completion","%"], avg:["Average Score","%"]
+};
+const descriptions = {
+ xp:"Overall XP = 1 × minute + 20 × Proficient+ skill + 30 × assignment completion percentage point. Average score is shown separately because not every student has one yet.",
+ minutes:"Time on task from Khan Academy activity, Aug. 3 – Oct. 1, 2026.",
+ proficient:"Number of Khan Academy skills reaching Proficient+.",
+ complete:"Percent of assigned Khan Academy work completed.",
+ avg:"Average score where Khan Academy reports a numeric score. Students without a numeric score are placed after scored students."
+};
+let mode="xp", hidden=false, timer=null;
+
+function metric(s){
+ let v=s[mode];
+ if(v===null || v===undefined) return -1;
+ return Number(v);
+}
+function fmt(v){
+ if(v===null || v===undefined || v<0) return "—";
+ if(mode==="xp") return Math.round(v).toLocaleString()+" XP";
+ if(mode==="minutes") return Math.round(v).toLocaleString()+" min";
+ if(mode==="proficient") return Math.round(v)+" skills";
+ return Math.round(v)+"%";
+}
+function shownName(n){
+ if(!hidden) return n;
+ return n.split(/\s+/).map(x=>x[0]?.toUpperCase()+".").join(" ");
+}
+function badges(s){
+ let b=[];
+ if(s.minutes>=400) b.push("🔥 Grind Mode");
+ if(s.proficient>=25) b.push("🧠 Skill Hacker");
+ if((s.complete??0)>=15) b.push("🚀 Assignment Rocket");
+ if((s.avg??0)>=80) b.push("🎯 Accuracy Ace");
+ if(s.worked>=30) b.push("⚡ Explorer");
+ return b.slice(0,2);
+}
+function podium(el,s,rank){
+ if(!s) return el.innerHTML="";
+ const icons=["🥇","🥈","🥉"];
+ el.innerHTML=`<div class="rank">${icons[rank-1]}</div><div class="name">${shownName(s.name)}</div>
+ <div class="score">${fmt(metric(s))}</div><div class="metric">${labels[mode][0]}</div>
+ <div class="badges" style="justify-content:center">${badges(s).map(x=>`<span class="badge">${x}</span>`).join("")}</div>`;
+}
+function render(celebrate=false){
+ let ranked=[...students].sort((a,b)=>{
+   const d=metric(b)-metric(a);
+   return d || b.proficient-a.proficient || b.minutes-a.minutes || a.name.localeCompare(b.name);
+ });
+ const valid=ranked.filter(s=>metric(s)>=0);
+ const max=Math.max(1,...valid.map(metric));
+ podium(document.getElementById("p1"),valid[0],1);
+ podium(document.getElementById("p2"),valid[1],2);
+ podium(document.getElementById("p3"),valid[2],3);
+ const board=document.getElementById("board");
+ board.innerHTML=ranked.map((s,i)=>{
+   let v=metric(s), pct=v<0?0:(v/max*100);
+   return `<div class="row">
+    <div class="place">#${i+1}</div>
+    <div><div class="student">${shownName(s.name)}</div><div class="badges">${badges(s).map(x=>`<span class="badge">${x}</span>`).join("")}</div></div>
+    <div class="barwrap"><div class="bar" style="width:${pct}%"></div></div>
+    <div class="value">${fmt(v)}</div>
+   </div>`;
+ }).join("");
+ document.getElementById("ticker").textContent=descriptions[mode];
+ if(celebrate) confetti();
+}
+function confetti(){
+ const f=document.getElementById("flash"), colors=["#27d7ff","#ffd84d","#43e28f","#ff5c73","#ffffff"];
+ for(let i=0;i<55;i++){
+   const d=document.createElement("div"); d.className="confetti";
+   d.style.left=Math.random()*100+"vw"; d.style.background=colors[i%colors.length];
+   d.style.animationDuration=(2.5+Math.random()*3)+"s"; d.style.animationDelay=Math.random()*.5+"s";
+   f.appendChild(d); setTimeout(()=>d.remove(),6500);
+ }
+}
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{
+ mode=b.dataset.mode; document.querySelectorAll("[data-mode]").forEach(x=>x.classList.toggle("active",x===b)); render(true);
+}));
+document.getElementById("privacy").onclick=()=>{
+ hidden=!hidden; document.getElementById("privacy").textContent=hidden?"🙈 Initials Only":"👁 Names On"; render();
+};
+document.getElementById("cycle").onclick=(e)=>{
+ if(timer){clearInterval(timer);timer=null;e.target.textContent="▶ Auto-Cycle";return}
+ e.target.textContent="⏸ Stop Cycle";
+ const modes=["xp","minutes","proficient","complete","avg"]; let k=modes.indexOf(mode);
+ timer=setInterval(()=>{
+   k=(k+1)%modes.length; mode=modes[k];
+   document.querySelectorAll("[data-mode]").forEach(x=>x.classList.toggle("active",x.dataset.mode===mode));
+   render(true);
+ },8000);
+};
+render(true);
+</script>
+<script src="../tour-agent.js"></script>
+</body>
+</html>

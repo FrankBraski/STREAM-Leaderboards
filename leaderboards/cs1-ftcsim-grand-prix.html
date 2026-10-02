@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CS1 FTCsim Grand Prix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: a race track — one lane per driver, robots drive to their puzzle count; badges and team progress below. Single dark theme on purpose. */
+:root{
+  --bg:#060b1d; --panel:#0c1530; --line:#1d2b55; --ink:#eef3ff; --dim:#8c9cc8;
+  --intro:#3f8cff; --move:#4cf0a0; --sense:#ffd23f; --puzz:#ff4f8b; --gold:#ffd23f;
+  --pixel:'Silkscreen','Courier New',monospace; --body:'Chakra Petch',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh;
+  background-image:radial-gradient(ellipse at 50% -10%,#12306e 0%,transparent 55%),repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 4px)}
+.wrap{max-width:1240px;margin:0 auto;padding:28px 20px 60px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
+.eyebrow{font-family:var(--pixel);font-size:14px;letter-spacing:.12em;color:var(--intro)}
+h1{font-family:var(--pixel);font-weight:700;font-size:clamp(34px,6vw,64px);line-height:1;margin:.15em 0 .1em;text-shadow:0 0 18px rgba(63,140,255,.55),3px 3px 0 #10225a}
+h1 .accent{color:var(--gold);text-shadow:0 0 18px rgba(255,210,63,.5),3px 3px 0 #5a4300}
+.sub{color:var(--dim);font-size:15px}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+button{font-family:var(--pixel);font-size:13px;letter-spacing:.06em;background:var(--panel);color:var(--ink);border:2px solid var(--line);padding:10px 14px;border-radius:6px;cursor:pointer}
+button:hover{border-color:var(--intro)} button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button.primary{background:var(--intro);border-color:var(--intro);color:#fff}
+.status{font-family:var(--pixel);font-size:clamp(14px,2vw,20px);color:var(--gold);min-height:1.6em;margin:4px 0 10px;letter-spacing:.06em}
+/* track */
+.track{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:14px 14px 10px;overflow-x:auto}
+.scale{display:grid;grid-template-columns:140px 1fr 74px;gap:12px;margin-bottom:6px;min-width:720px}
+.zones{display:grid;grid-template-columns:3fr 10fr 10fr 10fr;font-family:var(--pixel);font-size:11px;letter-spacing:.06em}
+.zones span{padding:4px 6px;border-left:2px solid var(--line)}
+.z0{color:var(--intro)}.z1{color:var(--move)}.z2{color:var(--sense)}.z3{color:var(--puzz)}
+.lanes{position:relative;min-width:720px}
+.lane{position:absolute;left:0;right:0;height:50px;display:grid;grid-template-columns:140px 1fr 74px;gap:12px;align-items:center;transition:transform .5s cubic-bezier(.3,1.2,.4,1)}
+.who{font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;gap:8px;align-items:center}
+.pos{font-family:var(--pixel);font-size:14px;color:var(--dim);width:26px}
+.lane.p1 .pos{color:var(--gold)}
+.road{position:relative;height:34px;border-radius:6px;background:#081029;overflow:visible;
+  background-image:repeating-linear-gradient(90deg,transparent 0 calc(100%/33 - 1px),rgba(255,255,255,.07) calc(100%/33 - 1px) calc(100%/33))}
+.road .dash{position:absolute;top:50%;left:0;right:0;border-top:2px dashed rgba(255,255,255,.08)}
+.road .fence{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--line)}
+.trail{position:absolute;left:0;top:9px;height:16px;border-radius:4px;display:flex;overflow:hidden;width:0}
+.trail i{height:100%;display:block}
+.bot{position:absolute;top:2px;left:0;width:40px;height:30px;transform:translateX(-50%);filter:drop-shadow(0 0 8px rgba(63,140,255,.6))}
+.bot .body{position:absolute;inset:4px 4px 7px 4px;background:#d8e3ff;border-radius:4px;border:2px solid #0b1020}
+.bot .eye{position:absolute;top:9px;width:5px;height:5px;background:#0b1020;border-radius:1px}
+.bot .eye.l{left:13px}.bot .eye.r{left:22px}
+.bot .w{position:absolute;bottom:1px;width:11px;height:11px;border-radius:50%;background:#0b1020;border:2px solid #9fb0d8;animation:spin .4s linear infinite paused}
+.bot .w.a{left:3px}.bot .w.b{right:3px}
+.driving .bot .w{animation-play-state:running}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lane.p1 .bot .body{background:var(--gold)} .lane.p2 .bot .body{background:#c9d3e8} .lane.p3 .bot .body{background:#e08a4c}
+.flag{position:absolute;top:9px;left:46px;font-family:var(--pixel);font-size:11px;color:var(--gold);opacity:0;transition:opacity .4s;white-space:nowrap}
+.lane.p1.done .flag{opacity:1}
+.cnt{font-family:var(--pixel);font-size:18px;text-align:right;font-variant-numeric:tabular-nums}
+.cnt small{color:var(--dim);font-size:12px}
+.grid-note{color:var(--dim);font-size:15px;margin:12px 4px 0}
+/* lower panels */
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:16px;margin-top:22px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:16px}
+h2{font-family:var(--pixel);font-size:18px;letter-spacing:.08em;margin:0 0 12px}
+.team .big{font-family:var(--pixel);font-size:40px}
+.team .big small{font-size:16px;color:var(--dim)}
+.meter{height:20px;background:#081029;border-radius:4px;overflow:hidden;display:flex;margin:10px 0 8px}
+.meter i{height:100%;width:0;transition:width 1.4s cubic-bezier(.2,.9,.3,1)}
+.course{display:grid;grid-template-columns:110px 1fr 60px;gap:10px;align-items:center;font-size:14px;color:var(--dim);margin-top:8px}
+.course .m{height:8px;background:#081029;border-radius:4px;overflow:hidden}
+.course .m i{display:block;height:100%;width:0;transition:width 1.4s}
+.badges{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.badge{border:2px solid var(--line);border-radius:10px;padding:12px;opacity:0;transform:scale(.92);transition:opacity .5s,transform .5s}
+.badge.show{opacity:1;transform:none}
+.badge .t{font-family:var(--pixel);font-size:12px;letter-spacing:.06em}
+.badge .n{font-weight:700;font-size:18px;margin:6px 0 2px;overflow-wrap:anywhere}
+.badge .v{color:var(--dim);font-size:13px}
+.badge.open{border-style:dashed}
+.formula{color:var(--dim);font-size:14px;margin-top:20px}
+/* editor */
+.drawer{position:fixed;inset:0 0 0 auto;width:min(560px,100%);background:#0a1330;border-left:2px solid var(--line);padding:20px;overflow:auto;z-index:20;transform:translateX(100%);transition:transform .3s}
+.drawer.open{transform:none}
+.drawer h3{font-family:var(--pixel);font-size:16px;margin:0 0 6px}
+.note{font-size:13px;color:var(--dim);line-height:1.45;margin:0 0 12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-family:var(--pixel);font-size:10px;letter-spacing:.05em;color:var(--dim);text-align:left;padding:4px}
+td{padding:3px 4px}
+td input{width:100%;font:inherit;background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:5px;padding:5px 6px}
+td input[type=number]{width:58px}
+.x{padding:4px 8px;font-size:11px}
+.btn-file{font-family:var(--pixel);font-size:13px;letter-spacing:.06em;background:var(--intro);color:#fff;border:2px solid var(--intro);padding:10px 14px;border-radius:6px;cursor:pointer;display:inline-block}
+.dbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
+@media (max-width:800px){.row2{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">DONOVAN CATHOLIC · COMPUTER SCIENCE I · FTCSIM.ORG</div>
+      <h1>CS1 FTCSIM <span class="accent">GRAND PRIX</span></h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="controls">
+      <button class="primary" id="replay">▶ RACE</button>
+      <button id="full">FULLSCREEN</button>
+      <button id="edit" aria-expanded="false" aria-controls="drawer">UPDATE PROGRESS</button>
+    </div>
+  </header>
+
+  <div class="status" id="status" aria-live="polite"></div>
+  <section class="track" aria-label="Race track">
+    <div class="scale"><span></span>
+      <div class="zones"><span class="z0">INTRO</span><span class="z1">MOVEMENT</span><span class="z2">SENSORS</span><span class="z3">PUZZLES</span></div><span></span></div>
+    <div class="lanes" id="lanes"></div>
+  </section>
+  <p class="grid-note" id="gridNote"></p>
+
+  <div class="row2">
+    <section class="card team">
+      <h2>TEAM PROGRESS</h2>
+      <div class="big" id="teamBig">0<small> / 0 puzzles</small></div>
+      <div class="meter" id="teamMeter"><i style="background:var(--intro)"></i><i style="background:var(--move)"></i><i style="background:var(--sense)"></i><i style="background:var(--puzz)"></i></div>
+      <div id="courses"></div>
+    </section>
+    <section class="card">
+      <h2>BADGES</h2>
+      <div class="badges" id="badges"></div>
+    </section>
+  </div>
+  <p class="formula">Each puzzle completed moves a robot one space. Tracks follow the FTCsim course order: Intro (3), Movement (10), Sensors (10), Puzzles (10). Ties go to whoever is further into the later courses, then alphabetical.</p>
+</div>
+
+<aside class="drawer" id="drawer" aria-label="Update progress">
+  <h3>UPDATE PROGRESS</h3>
+  <p class="note">Fastest: on your FTCsim Progress page press Ctrl+S, save as "Webpage, HTML only", then load that file here. Or type each driver's green checkmarks below. Changes save in this browser and the race replays.</p>
+  <div class="dbtns" style="margin:0 0 14px"><label class="btn-file" for="fHtml">LOAD FTCSIM PROGRESS PAGE (.HTML)</label><input type="file" id="fHtml" accept=".html,.htm" hidden></div>
+  <p class="note" id="loadMsg" style="color:var(--move)"></p>
+  <label class="note" style="display:block">As-of label <input id="asof" style="font:inherit;background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:5px;padding:5px 6px;width:100%"></label>
+  <table>
+    <thead><tr><th>DRIVER</th><th>INTRO /3</th><th>MOVE /10</th><th>SENSE /10</th><th>PUZZ /10</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="dbtns">
+    <button id="add">+ ADD DRIVER</button>
+    <button id="reset">RESET TO OCT 1</button>
+    <button id="close">CLOSE</button>
+  </div>
+</aside>
+
+<script>
+const COURSES = [{key:'intro',label:'Intro',max:3,color:'var(--intro)'},{key:'move',label:'Movement',max:10,color:'var(--move)'},
+                 {key:'sense',label:'Sensors',max:10,color:'var(--sense)'},{key:'puzz',label:'Puzzles',max:10,color:'var(--puzz)'}];
+const TOTAL = 33;
+const SAMPLE = {"asof": "Oct 1, 2026", "classroom": "CS1 2026-2027", "drivers": [{"name": "Antonia Lutz", "intro": 1, "move": 2, "sense": 0, "puzz": 0}, {"name": "Cooper Wilson", "intro": 3, "move": 4, "sense": 0, "puzz": 0}, {"name": "Joseph W", "intro": 3, "move": 4, "sense": 0, "puzz": 0}, {"name": "Avery W", "intro": 3, "move": 10, "sense": 5, "puzz": 0}, {"name": "Juan S", "intro": 3, "move": 10, "sense": 0, "puzz": 0}, {"name": "Catherine R", "intro": 3, "move": 6, "sense": 0, "puzz": 0}, {"name": "Owen P", "intro": 3, "move": 7, "sense": 0, "puzz": 0}, {"name": "Reed P", "intro": 3, "move": 5, "sense": 0, "puzz": 0}, {"name": "Santi P", "intro": 3, "move": 10, "sense": 1, "puzz": 0}, {"name": "Julie O", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Mosey N", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Kelsie N", "intro": 3, "move": 8, "sense": 0, "puzz": 0}, {"name": "Melanie I", "intro": 2, "move": 2, "sense": 0, "puzz": 0}, {"name": "Dioner G", "intro": 3, "move": 10, "sense": 1, "puzz": 0}, {"name": "Eden E", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Jaylan E", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Karter B", "intro": 3, "move": 5, "sense": 0, "puzz": 0}]};
+const LANE_H = 58, RACE_MS = 4200;
+const $ = id => document.getElementById(id);
+const store = {get(k){try{return JSON.parse(localStorage.getItem('ftcsimgp-cs1:'+k))}catch(e){return null}},
+               set(k,v){try{localStorage.setItem('ftcsimgp-cs1:'+k,JSON.stringify(v))}catch(e){}}};
+let data = store.get('data') || structuredClone(SAMPLE);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// "Cooper Wilson" -> "Cooper W"; FTCsim short names like "Owen GP" stay as they are
+const short = n => { const p=n.trim().split(/\s+/); return p.length>1 && p[p.length-1].length>3 ? p.slice(0,-1).join(' ')+' '+p[p.length-1][0] : n.trim(); };
+const sum = d => COURSES.reduce((a,c)=>a+(+d[c.key]||0),0);
+const depth = d => (+d.puzz||0)*1e6 + (+d.sense||0)*1e3 + (+d.move||0);
+const rankSort = (a,b) => sum(b)-sum(a) || depth(b)-depth(a) || a.name.localeCompare(b.name);
+let anim=null;
+
+function build(){
+  if(anim) cancelAnimationFrame(anim);
+  $('sub').textContent = `Puzzles completed as of ${data.asof} · Classroom ${data.classroom || SAMPLE.classroom}`;
+  const ranked = [...data.drivers].sort(rankSort);
+  const racing = ranked.filter(d=>sum(d)>0), waiting = ranked.length - racing.length;
+  $('gridNote').textContent = waiting ? `${waiting} driver${waiting===1?' is':'s are'} still on the starting grid. Finish your first puzzle to put your robot on the track!` : '';
+  const lanes = $('lanes'); lanes.innerHTML=''; lanes.style.height = (racing.length*LANE_H)+'px';
+  const start = [...racing].sort((a,b)=>a.name.localeCompare(b.name));
+  start.forEach((d,i)=>{
+    const el=document.createElement('div'); el.className='lane';
+    el.innerHTML=`<div class="who"><span class="pos"></span><span class="nm"></span></div>
+      <div class="road"><div class="dash"></div>
+        <div class="fence" style="left:${3/TOTAL*100}%"></div><div class="fence" style="left:${13/TOTAL*100}%"></div><div class="fence" style="left:${23/TOTAL*100}%"></div>
+        <div class="trail">${COURSES.map(c=>`<i style="background:${c.color}"></i>`).join('')}</div>
+        <div class="bot"><div class="flag">LEADER</div><div class="body"></div><div class="eye l"></div><div class="eye r"></div><div class="w a"></div><div class="w b"></div></div>
+      </div><div class="cnt">0<small>/${TOTAL}</small></div>`;
+    el.querySelector('.nm').textContent=short(d.name);
+    el.style.transform=`translateY(${i*LANE_H}px)`;
+    lanes.appendChild(el); d._el=el;
+  });
+  $('badges').innerHTML='';
+  renderTeam(0);
+  race(racing, ranked);
+}
+
+function paint(racing, k){
+  // each robot drives at its own pace; k goes 0..1 for the whole race
+  const vals = racing.map(d=>{
+    const t = sum(d), v = t * Math.min(1, k*(1+ (TOTAL - t)/TOTAL*0.6));
+    return {d, v};
+  });
+  vals.sort((a,b)=> b.v-a.v || rankSort(a.d,b.d));
+  vals.forEach((o,r)=>{
+    const el=o.d._el, pct=o.v/TOTAL*100;
+    el.style.transform=`translateY(${r*LANE_H}px)`;
+    el.className='lane'+(r<3&&o.v>0?' p'+(r+1):'')+(k>=1?' done':'');
+    el.querySelector('.pos').textContent=r+1;
+    el.querySelector('.bot').style.left=`calc(${pct}% )`;
+    const tr=el.querySelector('.trail'); tr.style.width=pct+'%';
+    let left=o.v; tr.querySelectorAll('i').forEach((seg,ci)=>{const c=COURSES[ci]; const take=Math.max(0,Math.min(+o.d[c.key]||0,left)); left-=take; seg.style.width=(o.v?take/o.v*100:0)+'%';});
+    el.querySelector('.cnt').innerHTML=`${Math.round(o.v)}<small>/${TOTAL}</small>`;
+  });
+}
+
+function race(racing, ranked){
+  if(reduce){paint(racing,1); finish(ranked); return;}
+  $('lanes').classList.add('driving');
+  const t0=performance.now();
+  const ease=x=>1-Math.pow(1-x,3);
+  const tick=now=>{
+    const k=Math.min(1,(now-t0)/RACE_MS);
+    $('status').textContent = k<0.15 ? 'READY... SET...' : k<1 ? 'GO!  ROBOTS ON THE FIELD' : 'FINAL STANDINGS';
+    paint(racing, ease(k));
+    renderTeam(ease(k));
+    if(k<1) anim=requestAnimationFrame(tick); else { $('lanes').classList.remove('driving'); finish(ranked); }
+  };
+  anim=requestAnimationFrame(tick);
+}
+
+function renderTeam(k){
+  const n=data.drivers.length, max=n*TOTAL;
+  const totals=COURSES.map(c=>data.drivers.reduce((a,d)=>a+(+d[c.key]||0),0));
+  const all=totals.reduce((a,b)=>a+b,0);
+  $('teamBig').innerHTML=`${Math.round(all*k)}<small> / ${max} puzzles · ${max?Math.round(all/max*100*k):0}%</small>`;
+  $('teamMeter').querySelectorAll('i').forEach((el,i)=> el.style.width=(max? totals[i]/max*100*k :0)+'%');
+  $('courses').innerHTML = COURSES.map((c,i)=>`<div class="course"><span>${c.label}</span><div class="m"><i style="background:${c.color};width:${n? totals[i]/(n*c.max)*100*k:0}%"></i></div><span>${Math.round(totals[i]*k)}/${n*c.max}</span></div>`).join('');
+}
+
+function finish(ranked){
+  if(!reduce) confetti();
+  const D=data.drivers, names=a=>a.map(d=>short(d.name));
+  const full=key=>D.filter(d=>(+d[key]||0)>=COURSES.find(c=>c.key===key).max);
+  const any=key=>D.filter(d=>(+d[key]||0)>0);
+  const lead=ranked[0];
+  const list=(arr,empty)=> arr.length ? (arr.length>4 ? `${arr.length} drivers` : names(arr).join(', ')) : empty;
+  const B=[
+    ['POLE POSITION','var(--gold)', lead&&sum(lead)>0 ? short(lead.name) : 'Open', lead&&sum(lead)>0 ? `${sum(lead)} of ${TOTAL} puzzles` : 'First puzzle takes it'],
+    ['INTRO GRADUATES','var(--intro)', list(full('intro'),'Unclaimed'), full('intro').length>4 ? names(full('intro')).join(', ') : 'Finished all 3 Intro puzzles'],
+    ['MOVEMENT MASTER','var(--move)', list(full('move'),'Unclaimed'), full('move').length ? 'Finished all 10 Movement puzzles' : 'Finish all 10 Movement puzzles'],
+    ['SENSOR PIONEER','var(--sense)', list(any('sense'),'Unclaimed'), any('sense').length ? 'Solved a Sensors puzzle' : 'Solve your first Sensors puzzle'],
+    ['PUZZLE CRACKER','var(--puzz)', list(any('puzz'),'Unclaimed'), any('puzz').length ? 'Solved an FTC Puzzle' : 'First to solve an FTC Puzzle earns it'],
+  ];
+  B.forEach(([t,col,n,v],i)=>{
+    const c=document.createElement('div'); c.className='badge'+(n==='Unclaimed'||n==='Open'?' open':'');
+    c.innerHTML=`<div class="t" style="color:${col}">${t}</div><div class="n"></div><div class="v"></div>`;
+    c.querySelector('.n').textContent=n; c.querySelector('.v').textContent=v;
+    $('badges').appendChild(c); setTimeout(()=>c.classList.add('show'), reduce?0:150+i*160);
+  });
+}
+
+const cv=$('fx'),cx=cv.getContext('2d');let parts=[];
+function confetti(){cv.width=innerWidth;cv.height=innerHeight;const cols=['#ffd23f','#3f8cff','#4cf0a0','#ff4f8b','#fff'];
+  for(let i=0;i<160;i++)parts.push({x:innerWidth*.75+(Math.random()-.5)*300,y:innerHeight*.3,vx:(Math.random()-.5)*14,vy:-Math.random()*13-4,s:Math.random()*8+4,c:cols[i%5],r:Math.random()*6,vr:(Math.random()-.5)*.4,l:0});
+  let n=0;(function f(){cx.clearRect(0,0,cv.width,cv.height);parts.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.l++;cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);cx.restore();});
+  parts=parts.filter(p=>p.y<cv.height+40&&p.l<240);if(parts.length&&n++<400)requestAnimationFrame(f);else cx.clearRect(0,0,cv.width,cv.height);})();}
+
+// editor
+function renderEditor(){
+  $('asof').value=data.asof;
+  $('rows').innerHTML='';
+  data.drivers.forEach((d,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input id="n${i}" aria-label="Driver name"></td>`+COURSES.map(c=>`<td><input type="number" min="0" max="${c.max}" id="${c.key}${i}" aria-label="${c.label} puzzles"></td>`).join('')+`<td><button class="x" aria-label="Remove driver">✕</button></td>`;
+    $('rows').appendChild(tr);
+    tr.querySelector('#n'+i).value=d.name;
+    COURSES.forEach(c=>tr.querySelector('#'+c.key+i).value=d[c.key]||0);
+    tr.querySelector('#n'+i).onchange=e=>{d.name=e.target.value.trim()||d.name; save();};
+    COURSES.forEach(c=> tr.querySelector('#'+c.key+i).onchange=e=>{d[c.key]=Math.max(0,Math.min(c.max,+e.target.value||0)); e.target.value=d[c.key]; save();});
+    tr.querySelector('.x').onclick=()=>{data.drivers.splice(i,1); save(); renderEditor();};
+  });
+}
+function save(){store.set('data',data); build();}
+$('asof').onchange=e=>{data.asof=e.target.value||data.asof; save();};
+$('add').onclick=()=>{data.drivers.push({name:'New driver',intro:0,move:0,sense:0,puzz:0}); save(); renderEditor();};
+$('reset').onclick=()=>{data=structuredClone(SAMPLE); store.set('data',null); renderEditor(); build();};
+$('edit').onclick=()=>{const o=$('drawer').classList.toggle('open'); $('edit').setAttribute('aria-expanded',o); if(o) renderEditor();};
+$('close').onclick=()=>{$('drawer').classList.remove('open'); $('edit').setAttribute('aria-expanded','false');};
+
+// read an FTCsim Progress page saved as HTML
+function parseFtcsim(text){
+  const doc=new DOMParser().parseFromString(text,'text/html');
+  const table=[...doc.querySelectorAll('table')].find(t=>/Student Name/i.test(t.textContent));
+  if(!table) throw new Error('Could not find the FTCsim progress table in that file.');
+  const heads=[...table.querySelectorAll('th')].map(th=>th.textContent.trim().toLowerCase());
+  const col={intro:heads.findIndex(h=>h.includes('intro')),move:heads.findIndex(h=>h.includes('movement')),
+             sense:heads.findIndex(h=>h.includes('sensor')),puzz:heads.findIndex(h=>h.includes('puzzle'))};
+  const drivers=[];
+  table.querySelectorAll('tr').forEach(tr=>{
+    const tds=[...tr.querySelectorAll('td')]; if(tds.length<2) return;
+    const name=tds[0].textContent.replace(/\s+/g,' ').trim(); if(!name) return;
+    const d={name};
+    COURSES.forEach(c=>{const td=tds[col[c.key]]; d[c.key]=td?Math.min(c.max,td.querySelectorAll('li.complete').length):0;});
+    drivers.push(d);
+  });
+  if(!drivers.length) throw new Error('No students found in the FTCsim table.');
+  const sel=doc.querySelector('option[selected]');
+  return {drivers, classroom: sel ? sel.textContent.trim() : null};
+}
+$('fHtml').onchange=e=>{const f=e.target.files[0]; if(!f) return; f.text().then(t=>{
+  try{ const r=parseFtcsim(t); data.drivers=r.drivers; if(r.classroom) data.classroom=r.classroom;
+       data.asof=new Date(f.lastModified).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+       save(); renderEditor(); $('loadMsg').textContent=`Loaded ${r.drivers.length} drivers from ${f.name}.`; }
+  catch(err){ $('loadMsg').textContent=err.message; } }); };
+$('replay').onclick=build;
+$('full').onclick=()=>{const d=document.documentElement;(document.fullscreenElement?document.exitFullscreen():d.requestFullscreen?.())?.catch?.(()=>{});};
+build();
+</script>
+<script src="../tour-agent.js"></script>
+</body>
+</html>

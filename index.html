@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>STREAM Leaderboard Tour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Auto-tour shell: one full-screen frame for the current leaderboard, a "next up" curtain between boards,
+   and a control bar that hides itself while the tour runs. Single dark theme to match the leaderboards. */
+:root{
+  --bg:#060b1d; --panel:#0c1530; --line:#1d2b55; --ink:#eef3ff; --dim:#8c9cc8;
+  --blue:#3f8cff; --gold:#ffd23f;
+  --pixel:'Silkscreen','Courier New',monospace; --body:'Chakra Petch',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--body)}
+#frame{position:fixed;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
+#curtain{position:fixed;inset:0;display:grid;place-content:center;text-align:center;gap:14px;padding:16px;z-index:5;
+  background:radial-gradient(ellipse at 50% 30%,#12306e 0%,var(--bg) 65%);transition:opacity .5s}
+#curtain.gone{opacity:0;pointer-events:none}
+#curtain .up{font-family:var(--pixel);letter-spacing:.2em;color:var(--blue);font-size:clamp(14px,2vw,20px)}
+#curtainTitle{font-family:var(--pixel);font-weight:700;color:var(--gold);font-size:clamp(28px,5vw,60px);line-height:1.1;
+  text-shadow:0 0 18px rgba(255,210,63,.5),3px 3px 0 #5a4300}
+#curtainCount{font-family:var(--pixel);color:var(--dim);font-size:14px;letter-spacing:.1em}
+/* control bar */
+#hud{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:10;width:min(860px,calc(100% - 32px));
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 14px;border-radius:12px;
+  background:rgba(10,19,48,.92);border:2px solid var(--line);box-shadow:0 12px 40px rgba(0,0,0,.5);
+  backdrop-filter:blur(6px);transition:opacity .4s, transform .4s}
+#hud.hide{opacity:0;transform:translate(-50%,20px);pointer-events:none}
+.now{flex:1 1 220px;min-width:0}
+#nowBoard{font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nowPart{font-family:var(--pixel);font-size:12px;color:var(--dim);letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.3em}
+.btns{display:flex;gap:6px}
+.btns button{width:42px;height:38px;display:grid;place-items:center;background:var(--panel);color:var(--ink);
+  border:2px solid var(--line);border-radius:6px;cursor:pointer;padding:0}
+.btns button:hover{border-color:var(--blue)}
+.btns button.primary{background:var(--blue);border-color:var(--blue)}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btns svg{width:18px;height:18px;fill:currentColor}
+.dots{flex-basis:100%;display:flex;gap:6px}
+.dots button{flex:1;height:6px;border:0;border-radius:3px;background:var(--line);cursor:pointer;padding:0;position:relative;overflow:hidden}
+.dots button.on{background:#2a4a8f}
+.dots button i{position:absolute;inset:0 auto 0 0;background:var(--gold);border-radius:3px;transition:width .4s}
+/* paused banner */
+#held{position:fixed;top:16px;right:16px;z-index:10;display:flex;align-items:center;gap:12px;flex-wrap:wrap;max-width:calc(100% - 32px);
+  padding:10px 12px 10px 16px;border-radius:10px;background:rgba(10,19,48,.94);border:2px solid var(--gold);
+  font-family:var(--pixel);font-size:13px;letter-spacing:.05em;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#held[hidden]{display:none}
+#held b{color:var(--gold);font-variant-numeric:tabular-nums}
+#held button{font-family:var(--pixel);font-size:12px;letter-spacing:.06em;background:var(--blue);color:#fff;border:2px solid var(--blue);
+  border-radius:6px;padding:7px 10px;cursor:pointer}
+.keys{flex-basis:100%;font-size:12px;color:var(--dim)}
+@media (max-width:560px){.keys{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<iframe id="frame" title="Leaderboard" allow="fullscreen"></iframe>
+
+<div id="curtain">
+  <div class="up">NEXT UP</div>
+  <div id="curtainTitle"></div>
+  <div id="curtainCount"></div>
+</div>
+
+<div id="held" role="status" hidden>
+  <span>PAUSED · TOUR RESUMES IN <b id="secs">30</b>s</span>
+  <button id="resumeNow">RESUME NOW</button>
+</div>
+
+<div id="hud" role="toolbar" aria-label="Tour controls">
+  <div class="dots" id="dots"></div>
+  <div class="now"><div id="nowBoard"></div><div id="nowPart"></div></div>
+  <div class="btns">
+    <button id="prevBoard" title="Previous leaderboard (Shift+Left)" aria-label="Previous leaderboard"><svg viewBox="0 0 24 24"><path d="M5 5h2.5v14H5zM19 5v14L8.5 12z"/></svg></button>
+    <button id="prev" title="Back (Left arrow)" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M17 5v14L6 12z"/></svg></button>
+    <button id="play" class="primary" title="Pause / resume (Space)" aria-label="Pause"><svg viewBox="0 0 24 24" id="playIcon"></svg></button>
+    <button id="next" title="Skip (Right arrow)" aria-label="Skip"><svg viewBox="0 0 24 24"><path d="M7 5v14l11-7z"/></svg></button>
+    <button id="nextBoard" title="Next leaderboard (Shift+Right)" aria-label="Next leaderboard"><svg viewBox="0 0 24 24"><path d="M16.5 5H19v14h-2.5zM5 5v14l10.5-7z"/></svg></button>
+    <button id="fs" title="Fullscreen (F)" aria-label="Fullscreen"><svg viewBox="0 0 24 24"><path d="M4 4h6v2.5H6.5V10H4zm10 0h6v6h-2.5V6.5H14zM4 14h2.5v3.5H10V20H4zm13.5 0H20v6h-6v-2.5h3.5z"/></svg></button>
+  </div>
+  <div class="keys">← → skip · Shift+← → change leaderboard · Space pause · F fullscreen · Scroll or click a leaderboard to look around; the tour picks up again after you stop.</div>
+</div>
+
+<script src="playlist.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const T = window.TOUR, B = T.boards;
+const q = new URLSearchParams(location.search);
+const opt = (k, d) => q.has(k) && q.get(k) !== '' && !isNaN(+q.get(k)) ? +q.get(k) : d;
+const IDLE_MS = opt('idle', T.idleResumeSeconds) * 1000;
+const FALLBACK_MS = opt('fallback', T.fallbackSeconds) * 1000;
+const CURTAIN_MS = 1200, HUD_HIDE_MS = 3500, WATCHDOG_MS = 5 * 60 * 1000;
+const agentCfg = b => ({
+  parts: b.parts || null, replay: b.replay || null, ready: b.ready || null, settle: b.settle ?? 1000, hide: b.hide || null,
+  speed: opt('speed', T.scrollSpeed), dwellTop: opt('dwellTop', T.dwellTopSeconds) * 1000,
+  dwellBottom: opt('dwellBottom', T.dwellBottomSeconds) * 1000, minPart: opt('minStop', T.minStopSeconds) * 1000
+});
+
+let board = 0, part = 0, parts = [];   // where the tour is; parts = tab labels of the current board
+let playing = true, resumeAt = 0;      // when held, the tour resumes at resumeAt
+let agent = false, shown = false;      // agent: the board's tour agent answered; shown: the board is on screen
+let loadSeq = 0, token = 0, runStarted = 0, fallbackAt = 0, curtainAt = 0, wantPart = 0;
+const frame = $('frame');
+const post = m => frame.contentWindow && frame.contentWindow.postMessage({ tour: 1, ...m }, '*');
+
+function loadBoard(i, startPart = 0) {
+  board = (i + B.length) % B.length; part = Math.max(0, startPart); wantPart = startPart;
+  parts = []; agent = false; shown = false; fallbackAt = 0;
+  const seq = ++loadSeq, b = B[board];
+  $('curtainTitle').textContent = b.title;
+  $('curtainCount').textContent = `LEADERBOARD ${board + 1} OF ${B.length}`;
+  $('curtain').classList.remove('gone'); curtainAt = Date.now();
+  // the same file twice in a row would not reload, so bust it
+  frame.src = b.file + (frame.dataset.file === b.file ? '?r=' + seq : '');
+  frame.dataset.file = b.file;
+  updateHud();
+  // a page served from the same place as this one can be given the agent even if its file lacks the script tag
+  setTimeout(() => { if (seq === loadSeq && !agent) injectAgent(); }, 2500);
+  setTimeout(() => { if (seq === loadSeq && !agent) showWithoutAgent(); }, 5000);
+}
+function injectAgent() {
+  try {
+    const d = frame.contentDocument;
+    if (!d || frame.contentWindow.__tourAgent) return;
+    const s = d.createElement('script'); s.src = new URL('tour-agent.js', location.href).href; d.body.appendChild(s);
+  } catch (e) { /* different origin (e.g. opened from disk): fall back to a timed stop */ }
+}
+function showWithoutAgent() {
+  shown = true; $('curtain').classList.add('gone');
+  if (playing) fallbackAt = Date.now() + FALLBACK_MS;
+  updateHud();
+}
+function enterPart(p, withCfg) {
+  const seq = loadSeq;
+  setTimeout(() => { if (seq === loadSeq) post({ type: 'enter', part: p, cfg: withCfg ? agentCfg(B[board]) : undefined }); },
+             withCfg ? Math.max(0, CURTAIN_MS - (Date.now() - curtainAt)) : 0);
+}
+function run() { if (!agent || !shown) return; token++; runStarted = Date.now(); post({ type: 'run', token }); }
+
+function next() {
+  if (agent && parts.length && part < parts.length - 1) { part++; enterPart(part); updateHud(); }
+  else loadBoard(board + 1, 0);
+}
+function prev() {
+  if (agent && parts.length && part > 0) { part--; enterPart(part); updateHud(); }
+  else loadBoard(board - 1, -1);   // -1: land on the last tab of the previous board
+}
+function hold() {
+  playing = false; resumeAt = Date.now() + IDLE_MS; fallbackAt = 0;
+  if (agent) post({ type: 'hold' });
+  updateHud(); showHud();
+}
+function resume() {
+  playing = true;
+  if (agent) run(); else if (shown) fallbackAt = Date.now() + FALLBACK_MS / 2;
+  updateHud(); showHud();
+}
+// navigating while paused keeps the tour paused and restarts the countdown
+function nav(fn) { fn(); if (!playing) resumeAt = Date.now() + IDLE_MS; showHud(); tick(); }
+function toggleFullscreen() {
+  const d = document.documentElement;
+  (document.fullscreenElement ? document.exitFullscreen() : d.requestFullscreen?.())?.catch?.(() => {});
+}
+function onKey(key, shift) {
+  if (key === 'ArrowRight') nav(shift ? () => loadBoard(board + 1, 0) : next);
+  else if (key === 'ArrowLeft') nav(shift ? () => loadBoard(board - 1, 0) : prev);
+  else if (key === ' ' || key === 'p' || key === 'P') playing ? hold() : resume();
+  else if (key === 'f' || key === 'F') toggleFullscreen();
+}
+
+window.addEventListener('message', e => {
+  if (e.source !== frame.contentWindow || !e.data || e.data.tour !== 1) return;
+  const m = e.data;
+  switch (m.type) {
+    case 'hello': agent = true; enterPart(wantPart, true); break;
+    case 'info':
+      part = m.part; parts = m.parts || [];
+      if (!shown) { shown = true; $('curtain').classList.add('gone'); }
+      updateHud();
+      if (playing) run();
+      break;
+    case 'done': if (playing && m.token === token) next(); break;
+    case 'interact': hold(); break;
+    case 'partClicked': if (m.part >= 0) { part = m.part; updateHud(); } break;
+    case 'key': onKey(m.key, m.shift); break;
+    case 'poke': showHud(); break;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (['ArrowLeft', 'ArrowRight', ' ', 'f', 'F', 'p', 'P'].includes(e.key)) { e.preventDefault(); onKey(e.key, e.shiftKey); }
+});
+
+// controls
+B.forEach((b, i) => {
+  const d = document.createElement('button');
+  d.title = b.title; d.setAttribute('aria-label', 'Go to ' + b.title); d.innerHTML = '<i></i>';
+  d.onclick = () => nav(() => loadBoard(i, 0));
+  $('dots').appendChild(d);
+});
+$('prev').onclick = () => nav(prev);
+$('next').onclick = () => nav(next);
+$('prevBoard').onclick = () => nav(() => loadBoard(board - 1, 0));
+$('nextBoard').onclick = () => nav(() => loadBoard(board + 1, 0));
+$('play').onclick = () => playing ? hold() : resume();
+$('resumeNow').onclick = resume;
+$('fs').onclick = toggleFullscreen;
+
+function updateHud() {
+  $('nowBoard').textContent = B[board].title;
+  $('nowPart').textContent = parts.length > 1 ? `TAB ${part + 1} OF ${parts.length} · ${parts[part] || ''}` : `LEADERBOARD ${board + 1} OF ${B.length}`;
+  [...$('dots').children].forEach((d, i) => {
+    d.classList.toggle('on', i === board);
+    d.firstChild.style.width = i < board ? '100%' : i > board ? '0' : (parts.length > 1 ? (part + 1) / parts.length * 100 : 100) + '%';
+  });
+  $('playIcon').innerHTML = playing ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>' : '<path d="M7 5v14l11-7z"/>';
+  $('play').setAttribute('aria-label', playing ? 'Pause' : 'Resume');
+  $('held').hidden = playing;
+}
+let hudTimer = null;
+function showHud() {
+  $('hud').classList.remove('hide');
+  clearTimeout(hudTimer);
+  hudTimer = setTimeout(() => { if (playing && !$('hud').matches(':hover')) $('hud').classList.add('hide'); }, HUD_HIDE_MS);
+}
+document.addEventListener('mousemove', showHud, { passive: true });
+
+function tick() {
+  const now = Date.now();
+  if (!playing) {
+    if (now >= resumeAt) resume();
+    else $('secs').textContent = Math.ceil((resumeAt - now) / 1000);
+  } else if (fallbackAt && now >= fallbackAt) { fallbackAt = 0; next(); }
+  else if (agent && shown && runStarted && now - runStarted > WATCHDOG_MS) { runStarted = 0; next(); }
+}
+setInterval(tick, 250);
+
+// keep a classroom display from going to sleep
+let lock = null;
+async function keepAwake() { try { if (!lock && document.visibilityState === 'visible') { lock = await navigator.wakeLock?.request('screen'); lock?.addEventListener('release', () => lock = null); } } catch (e) {} }
+document.addEventListener('visibilitychange', keepAwake);
+keepAwake();
+
+loadBoard(Math.max(0, Math.min(B.length - 1, opt('start', 1) - 1)), 0);
+showHud();
+</script>
+</body>
+</html>
