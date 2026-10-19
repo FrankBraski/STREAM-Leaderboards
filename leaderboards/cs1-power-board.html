@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CS1 Power Board · CompSci 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #070b14;
+    --panel: #101828ee;
+    --line: #243044;
+    --cyan: #3ee0ff;
+    --mag: #ff4fd8;
+    --gold: #ffd15c;
+    --lime: #7dffb3;
+    --ink: #e8f1ff;
+    --muted: #8ea0bd;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: Outfit, system-ui, sans-serif; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(900px 500px at 10% -10%, #1a2a55 0%, transparent 60%),
+      radial-gradient(800px 480px at 110% 0%, #3a1744 0%, transparent 55%),
+      linear-gradient(180deg, #070b14, #0b1220 40%, #070b14);
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    pointer-events: none;
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px);
+    mix-blend-mode: overlay;
+    z-index: 5;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px; position: relative; z-index: 1; }
+  header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-end; flex-wrap: wrap; }
+  .kicker { font-family: "Share Tech Mono", monospace; letter-spacing: .22em; color: var(--cyan); font-size: 12px; }
+  h1 { font-family: Orbitron, sans-serif; font-weight: 900; margin: 6px 0 4px; font-size: clamp(28px, 4vw, 46px); letter-spacing: .02em; }
+  h1 span { color: var(--gold); }
+  .sub { color: var(--muted); max-width: 640px; line-height: 1.45; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  button.mode {
+    border: 1px solid var(--line); background: #0e1626; color: var(--ink);
+    font-family: Outfit, sans-serif; font-weight: 700; border-radius: 999px;
+    padding: 9px 14px; cursor: pointer; transition: .2s transform, .2s background, .2s border;
+  }
+  button.mode:hover { transform: translateY(-1px); border-color: var(--cyan); }
+  button.mode.on { background: linear-gradient(90deg, #123, #231433); border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 18px #3ee0ff33; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 22px 0 8px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .stat b { display: block; font-family: Orbitron, sans-serif; font-size: 22px; color: var(--gold); }
+  .stat span { color: var(--muted); font-size: 12px; letter-spacing: .04em; }
+  .podium { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 12px; align-items: end; margin: 18px 0 22px; min-height: 250px; }
+  .pod {
+    background: linear-gradient(180deg, #17233a, #0d1524);
+    border: 1px solid var(--line); border-radius: 18px 18px 10px 10px;
+    padding: 16px 14px 14px; text-align: center; position: relative;
+    transform: translateY(30px); opacity: 0; animation: rise .7s ease forwards;
+  }
+  .pod.p1 { animation-delay: .15s; min-height: 230px; border-color: #ffd15c88; box-shadow: 0 0 30px #ffd15c22; }
+  .pod.p2 { animation-delay: .35s; min-height: 190px; }
+  .pod.p3 { animation-delay: .5s; min-height: 170px; }
+  .medal { font-size: 28px; }
+  .pod .name { font-weight: 800; font-size: 18px; margin-top: 4px; }
+  .pod .score { font-family: Orbitron, sans-serif; color: var(--gold); font-size: 28px; }
+  .pod .tag { color: var(--cyan); font-family: "Share Tech Mono", monospace; font-size: 12px; }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .row {
+    display: grid; grid-template-columns: 54px 1.3fr 2.2fr 92px;
+    gap: 10px; align-items: center;
+    background: #0e1728cc; border: 1px solid var(--line); border-radius: 14px;
+    padding: 10px 12px; position: relative; overflow: hidden;
+    animation: slide .55s ease both;
+  }
+  .row.me-top { border-color: #ffd15c66; }
+  .rank { font-family: Orbitron, sans-serif; font-size: 18px; color: var(--muted); }
+  .who .name { font-weight: 800; }
+  .who .badge { display: inline-block; margin-left: 8px; font-size: 11px; color: #071018; background: var(--lime); border-radius: 999px; padding: 2px 7px; font-weight: 800; vertical-align: 1px; }
+  .who .meta { color: var(--muted); font-size: 12px; font-family: "Share Tech Mono", monospace; margin-top: 2px; }
+  .barwrap { height: 14px; background: #0a101b; border-radius: 999px; overflow: hidden; border: 1px solid #1c2940; }
+  .bar { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #1d8cff, #3ee0ff 55%, #ff4fd8); box-shadow: 0 0 12px #3ee0ff66; transition: width 1.1s cubic-bezier(.2,.8,.2,1); }
+  .pts { text-align: right; font-family: Orbitron, sans-serif; font-size: 16px; }
+  .note { margin-top: 22px; color: var(--muted); font-size: 13px; line-height: 1.5; background: #0c1422; border: 1px dashed #2a3b58; border-radius: 12px; padding: 12px 14px; }
+  .spark { position: fixed; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; z-index: 6; animation: pop 900ms ease-out forwards; }
+  @keyframes rise { to { transform: none; opacity: 1; } }
+  @keyframes slide { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { to { transform: translateY(-80px) scale(.2); opacity: 0; } }
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .podium { grid-template-columns: 1fr; }
+    .row { grid-template-columns: 40px 1fr; }
+    .barwrap, .pts { grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="kicker">MONSIGNOR DONOVAN · COMPSCI 1 · OCT 1, 2026</div>
+      <h1>CS1 <span>POWER BOARD</span></h1>
+      <p class="sub">Aug 3 – Oct 1 activity plus all-time assignment progress. Hit a mode to re-rank the class. Power score blends mastery, classwork, and time on task.</p>
+      <div class="pills" id="modes">
+        <button class="mode on" data-mode="power">Power score</button>
+        <button class="mode" data-mode="proficient">Skills to proficient+</button>
+        <button class="mode" data-mode="leveled">Skills leveled up</button>
+        <button class="mode" data-mode="assign">Assignment completion</button>
+        <button class="mode" data-mode="time">Time on task</button>
+      </div>
+    </div>
+  </header>
+  <section class="stats" id="stats"></section>
+  <section class="podium" id="podium"></section>
+  <section class="list" id="list"></section>
+  <p class="note" id="note"></p>
+</div>
+<script>
+const students = [
+  {name:"Angel Lagardera", min:136, skills:4, leveled:3, prof:3, avg:26, pct:5},
+  {name:"Antonia Lutz", min:718, skills:21, leveled:9, prof:5, avg:52, pct:23},
+  {name:"Avery Weaver", min:114, skills:7, leveled:7, prof:7, avg:35, pct:9},
+  {name:"Catherine Ridley", min:107, skills:10, leveled:9, prof:8, avg:null, pct:3},
+  {name:"Cooper Wilson", min:376, skills:27, leveled:26, prof:26, avg:null, pct:2},
+  {name:"Dioner Gonzalez-Amaya", min:573, skills:44, leveled:40, prof:40, avg:null, pct:3},
+  {name:"Eden Etheridge", min:226, skills:12, leveled:10, prof:9, avg:81, pct:11},
+  {name:"Frandy Rodas", min:7, skills:0, leveled:0, prof:0, avg:null, pct:0},
+  {name:"Jaylan Esquivel", min:382, skills:41, leveled:40, prof:38, avg:26, pct:12},
+  {name:"Joseph Willis", min:243, skills:2, leveled:1, prof:1, avg:null, pct:5},
+  {name:"Juan Suarez-Rico", min:484, skills:34, leveled:33, prof:33, avg:null, pct:0},
+  {name:"Julie Ortiz", min:523, skills:26, leveled:22, prof:22, avg:50, pct:6},
+  {name:"Karter Burris", min:136, skills:3, leveled:2, prof:2, avg:13, pct:2},
+  {name:"Kelsie Nguyen", min:114, skills:10, leveled:9, prof:9, avg:26, pct:19},
+  {name:"Melanie Inestra", min:429, skills:12, leveled:9, prof:9, avg:null, pct:7},
+  {name:"Moserat Nodine", min:315, skills:26, leveled:25, prof:22, avg:null, pct:2},
+  {name:"Owen Powers", min:273, skills:21, leveled:20, prof:16, avg:13, pct:6},
+  {name:"Reed Plummer", min:198, skills:8, leveled:8, prof:7, avg:null, pct:4},
+  {name:"Santiago Parra", min:199, skills:4, leveled:4, prof:4, avg:35, pct:20}
+];
+
+const MAX = {
+  min: 718, prof: 40, leveled: 40, pct: 23, avg: 81
+};
+
+function power(s) {
+  const avg = s.avg == null ? 0 : s.avg;
+  return (
+    35 * (s.prof / MAX.prof) +
+    20 * (s.leveled / MAX.leveled) +
+    20 * (s.pct / MAX.pct) +
+    15 * (avg / MAX.avg) +
+    10 * (s.min / MAX.min)
+  );
+}
+
+const modes = {
+  power: { label: "Power score", unit: "pts", val: s => power(s), fmt: v => v.toFixed(1) },
+  proficient: { label: "Skills to proficient+", unit: "skills", val: s => s.prof, fmt: v => String(Math.round(v)) },
+  leveled: { label: "Skills leveled up", unit: "skills", val: s => s.leveled, fmt: v => String(Math.round(v)) },
+  assign: { label: "Assignment completion", unit: "%", val: s => s.pct, fmt: v => v + "%" },
+  time: { label: "Time on task", unit: "min", val: s => s.min, fmt: v => v + "m" }
+};
+
+const badges = ["Binary Boss","Loop Legend","Debug Demon","Pixel Pilot","Stack Sprinter","Bit Wizard","Orbit Coder","Syntax Star","Cache King","Null Hunter"];
+
+function titleFor(i, mode) {
+  if (i === 0) return mode === "time" ? "Marathon coder" : mode === "assign" ? "Assignment ace" : "Class champion";
+  if (i === 1) return "Runner-up";
+  if (i === 2) return "Podium";
+  return badges[i % badges.length];
+}
+
+let mode = "power";
+
+function burst() {
+  for (let i = 0; i < 18; i++) {
+    const d = document.createElement("i");
+    d.className = "spark";
+    d.style.left = (20 + Math.random()*60) + "vw";
+    d.style.top = (18 + Math.random()*20) + "vh";
+    d.style.background = ["#ffd15c","#3ee0ff","#ff4fd8","#7dffb3"][i%4];
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 900);
+  }
+}
+
+function render() {
+  const spec = modes[mode];
+  const ranked = students.map(s => ({...s, score: spec.val(s)})).sort((a,b) => b.score - a.score || b.prof - a.prof || b.min - a.min);
+  const top = ranked[0].score || 1;
+  const totalMin = students.reduce((a,s) => a+s.min, 0);
+  const totalProf = students.reduce((a,s) => a+s.prof, 0);
+  document.getElementById("stats").innerHTML = [
+    [students.length, "students on the board"],
+    [Math.round(totalMin/60) + "h", "combined time on task"],
+    [totalProf, "skills to proficient+"],
+    [ranked[0].name.split(" ")[0], "current leader"]
+  ].map(([b,s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+
+  const medals = ["🥇","🥈","🥉"];
+  document.getElementById("podium").innerHTML = [1,0,2].map(i => {
+    const s = ranked[i];
+    return `<article class="pod p${i+1}"><div class="medal">${medals[i]}</div><div class="tag">#${i+1} · ${titleFor(i, mode)}</div><div class="name">${s.name}</div><div class="score">${spec.fmt(s.score)}</div><div class="tag">${s.prof} proficient · ${s.pct}% assigned · ${s.min} min</div></article>`;
+  }).join("");
+
+  document.getElementById("list").innerHTML = ranked.map((s, i) => {
+    const width = Math.max(4, Math.round(100 * s.score / top));
+    const avg = s.avg == null ? "no scored avg" : s.avg + " avg";
+    return `<article class="row ${i<3?"me-top":""}" style="animation-delay:${i*40}ms">
+      <div class="rank">${String(i+1).padStart(2,"0")}</div>
+      <div class="who"><div class="name">${s.name}<span class="badge">${titleFor(i, mode)}</span></div>
+      <div class="meta">${s.min} min · ${s.skills} skills · ${s.leveled} leveled · ${s.prof} proficient+ · ${s.pct}% done · ${avg}</div></div>
+      <div class="barwrap"><div class="bar" data-w="${width}"></div></div>
+      <div class="pts">${spec.fmt(s.score)}</div>
+    </article>`;
+  }).join("");
+  requestAnimationFrame(() => {
+    document.querySelectorAll(".bar").forEach(b => b.style.width = b.dataset.w + "%");
+  });
+  document.getElementById("note").textContent =
+    `Ranking by ${spec.label}. Power score = 35% skills to proficient+ + 20% skills leveled up + 20% assignment completion + 15% average score (blank averages count as 0) + 10% time on task, each scaled to the class high. Activity window is Aug 3–Oct 1, 2026 and includes work outside class courses. Assignment export is all-time. A blank average means Khan had no scored exercise average, not that the student did nothing.`;
+  burst();
+}
+
+document.getElementById("modes").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  mode = btn.dataset.mode;
+  document.querySelectorAll(".mode").forEach(b => b.classList.toggle("on", b === btn));
+  render();
+});
+render();
+</script>
+<script src="../tour-agent.js"></script>
+</body>
+</html>

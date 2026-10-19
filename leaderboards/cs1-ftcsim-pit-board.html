@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CS1 FTCsim Pit Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d1218;
+    --panel: #15202bee;
+    --line: #243044;
+    --cyan: #3ec6ff;
+    --gold: #ffc14a;
+    --ink: #f3efe6;
+    --muted: #9eb0c4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: Barlow, system-ui, sans-serif; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(900px 480px at 0% -10%, #123044 0%, transparent 55%),
+      radial-gradient(700px 420px at 100% 0%, #2a2214 0%, transparent 50%),
+      linear-gradient(180deg, #0d1218, #101820 50%, #0d1218);
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 18px 64px; }
+  .kicker { letter-spacing: .18em; color: var(--cyan); font-size: 12px; font-weight: 700; }
+  h1 { font-family: "Barlow Condensed", sans-serif; font-weight: 800; margin: 4px 0; font-size: clamp(36px, 6vw, 64px); letter-spacing: .02em; line-height: .9; }
+  h1 span { color: var(--gold); }
+  .sub { color: var(--muted); max-width: 680px; line-height: 1.45; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  button.mode {
+    border: 1px solid var(--line); background: #121a24; color: var(--ink);
+    font-weight: 700; border-radius: 999px; padding: 9px 14px; cursor: pointer;
+  }
+  button.mode.on { background: #123044; border-color: var(--cyan); color: var(--cyan); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 18px 0; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .stat b { display: block; font-family: "Barlow Condensed", sans-serif; font-size: 28px; color: var(--gold); }
+  .stat span { color: var(--muted); font-size: 13px; }
+  .podium { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 12px; align-items: end; margin: 8px 0 18px; }
+  .pod { position: relative; overflow: hidden; border-radius: 18px; padding: 16px 14px 14px; text-align: center; animation: rise .6s ease both; border: 3px solid transparent; }
+  .pod .floaters { font-size: 22px; letter-spacing: .15em; line-height: 1.2; }
+  .pod .medal { font-size: 42px; line-height: 1; margin: 4px 0; filter: drop-shadow(0 6px 0 rgba(0,0,0,.25)); animation: bounce 1.6s ease-in-out infinite; }
+  .pod .place { font-family: "Barlow Condensed", sans-serif; font-weight: 800; letter-spacing: .16em; font-size: 14px; }
+  .pod .name { font-weight: 800; font-size: 22px; margin-top: 2px; }
+  .pod .score { font-family: "Barlow Condensed", sans-serif; font-size: 40px; line-height: 1; }
+  .pod .tag { font-size: 13px; margin-top: 4px; opacity: .85; }
+  .pod.p1 { min-height: 230px; color: #3a2504; background: radial-gradient(120px 80px at 50% 0%, #fff6c8, transparent 70%), linear-gradient(180deg, #ffe56a, #f5b423 55%, #c88712); border-color: #fff1a8; box-shadow: 0 0 28px #ffc14a66; animation-delay: .1s; }
+  .pod.p2 { min-height: 190px; color: #1c2430; background: radial-gradient(100px 70px at 50% 0%, #ffffff, transparent 70%), linear-gradient(180deg, #f4f7fb, #c5ced8 55%, #8d99a8); border-color: #fff; box-shadow: 0 0 18px #d7dee866; animation-delay: .22s; }
+  .pod.p3 { min-height: 176px; color: #3a1c0c; background: radial-gradient(100px 70px at 50% 0%, #ffd7b0, transparent 70%), linear-gradient(180deg, #e89a62, #c46a32 55%, #8a4520); border-color: #ffd0a8; box-shadow: 0 0 18px #c46a3266; animation-delay: .34s; }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: grid; grid-template-columns: 48px 1.4fr 2fr 88px; gap: 10px; align-items: center; background: #121a24cc; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; animation: slide .45s ease both; }
+  .rank { font-family: "Barlow Condensed", sans-serif; font-size: 22px; color: var(--muted); }
+  .who .name { font-weight: 800; }
+  .badge { margin-left: 8px; font-size: 11px; background: var(--gold); color: #1a1208; border-radius: 999px; padding: 2px 7px; font-weight: 800; }
+  .flag { margin-left: 6px; font-size: 11px; color: #ff8a4a; font-weight: 700; }
+  .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .barwrap { height: 14px; background: #0b1016; border-radius: 999px; overflow: hidden; border: 1px solid #243044; }
+  .bar { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #1478a8, #3ec6ff 55%, #ffc14a); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+  .pts { text-align: right; font-family: "Barlow Condensed", sans-serif; font-size: 22px; }
+  .note { margin-top: 18px; color: var(--muted); font-size: 13px; line-height: 1.5; border: 1px dashed #243044; border-radius: 12px; padding: 12px 14px; }
+  .spark { position: fixed; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; animation: pop 900ms ease-out forwards; }
+  @keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes slide { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { to { transform: translateY(-70px) scale(.2); opacity: 0; } }
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .podium { grid-template-columns: 1fr; }
+    .row { grid-template-columns: 36px 1fr; }
+    .barwrap, .pts { grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">DONOVAN CATHOLIC · CS1 · 2026–2027 · OCT 1</div>
+  <h1>CS1 <span>PIT BOARD</span></h1>
+  <p class="sub">Saved FTCsim progress for Computer Science 1. A check counts. A flagged puzzle is stuck and still open. Switch a lane to re-rank.</p>
+  <div class="pills" id="modes">
+    <button class="mode on" data-mode="power">Pit score</button>
+    <button class="mode" data-mode="all">All clears</button>
+    <button class="mode" data-mode="movement">Movement</button>
+    <button class="mode" data-mode="intro">Intro</button>
+    <button class="mode" data-mode="sensors">Sensors</button>
+  </div>
+  <section class="stats" id="stats"></section>
+  <section class="podium" id="podium"></section>
+  <section class="list" id="list"></section>
+  <p class="note" id="note"></p>
+</div>
+<script>
+const students = [
+  {name:"Avery W", intro:3, movement:10, sensors:5, puzzles:0, flags:0, next:"Sensors · Navigation"},
+  {name:"Dioner G", intro:3, movement:10, sensors:1, puzzles:0, flags:0, next:"Sensors · Multicolor"},
+  {name:"Santi P", intro:3, movement:10, sensors:1, puzzles:0, flags:1, next:"Sensors · Multicolor"},
+  {name:"Juan S", intro:3, movement:10, sensors:0, puzzles:0, flags:0, next:"Sensors · Color Sense"},
+  {name:"Kelsie N", intro:3, movement:8, sensors:0, puzzles:0, flags:0, next:"Movement · Around the World"},
+  {name:"Owen P", intro:3, movement:7, sensors:0, puzzles:0, flags:0, next:"Movement · Helix"},
+  {name:"Catherine R", intro:3, movement:6, sensors:0, puzzles:0, flags:0, next:"Movement · Turn Test"},
+  {name:"Reed P", intro:3, movement:5, sensors:0, puzzles:0, flags:0, next:"Movement · Square"},
+  {name:"Karter B", intro:3, movement:5, sensors:0, puzzles:0, flags:0, next:"Movement · Square"},
+  {name:"Cooper Wilson", intro:3, movement:4, sensors:0, puzzles:0, flags:0, next:"Movement · L"},
+  {name:"Joseph W", intro:3, movement:4, sensors:0, puzzles:0, flags:0, next:"Movement · L"},
+  {name:"Julie O", intro:3, movement:3, sensors:0, puzzles:0, flags:0, next:"Movement · Arch"},
+  {name:"Mosey N", intro:3, movement:3, sensors:0, puzzles:0, flags:0, next:"Movement · Arch"},
+  {name:"Eden E", intro:3, movement:3, sensors:0, puzzles:0, flags:0, next:"Movement · Arch"},
+  {name:"Jaylan E", intro:3, movement:3, sensors:0, puzzles:0, flags:0, next:"Movement · Arch"},
+  {name:"Melanie I", intro:2, movement:2, sensors:0, puzzles:0, flags:0, next:"Intro · Half Moon"},
+  {name:"Antonia Lutz", intro:1, movement:2, sensors:0, puzzles:0, flags:0, next:"skipped Line. jumped to Half Moon", vibe:"🌀 Started in the middle"}
+];
+function power(s) {
+  return 40 * (s.movement / 10) + 25 * (s.intro / 3) + 25 * (s.sensors / 10) + 10 * (s.puzzles / 10);
+}
+const modes = {
+  power: { label: "Pit score", val: power, fmt: v => v.toFixed(1) },
+  all: { label: "All clears", val: s => s.intro + s.movement + s.sensors + s.puzzles, fmt: v => v + "/33" },
+  movement: { label: "Movement", val: s => s.movement, fmt: v => v + "/10" },
+  intro: { label: "Intro", val: s => s.intro, fmt: v => v + "/3" },
+  sensors: { label: "Sensors", val: s => s.sensors, fmt: v => v + "/10" }
+};
+let mode = "power";
+function burst() {
+  for (let i = 0; i < 14; i++) {
+    const d = document.createElement("i");
+    d.className = "spark";
+    d.style.left = (18 + Math.random() * 64) + "vw";
+    d.style.top = (16 + Math.random() * 20) + "vh";
+    d.style.background = ["#ffc14a", "#3ec6ff", "#f3efe6"][i % 3];
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 900);
+  }
+}
+function render() {
+  const spec = modes[mode];
+  const ranked = students.map(s => ({...s, score: spec.val(s)})).sort((a, b) => b.score - a.score || b.sensors - a.sensors || a.name.localeCompare(b.name));
+  const top = ranked[0].score || 1;
+  const clears = students.reduce((n, s) => n + s.intro + s.movement + s.sensors + s.puzzles, 0);
+  document.getElementById("stats").innerHTML = [
+    [students.length, "drivers on the roster"],
+    [clears, "puzzles cleared"],
+    [students.filter(s => s.movement === 10).length, "movement complete"],
+    [students.reduce((n, s) => n + s.flags, 0), "flagged puzzles"]
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+  const places = [
+    { medal: "🥇", label: "GOLD", icons: "🏆 🤖 🧠 🏁", word: "Pit champion" },
+    { medal: "🥈", label: "SILVER", icons: "🏁 🧠 🤖", word: "Chasing" },
+    { medal: "🥉", label: "BRONZE", icons: "🚩 🤖 💡", word: "On the podium" }
+  ];
+  document.getElementById("podium").innerHTML = [1, 0, 2].map(i => {
+    const s = ranked[i];
+    const place = places[i];
+    return `<article class="pod p${i + 1}">
+      <div class="floaters">${place.icons}</div>
+      <div class="medal">${place.medal}</div>
+      <div class="place">${place.label} · #${i + 1}</div>
+      <div class="name">${s.name}</div>
+      <div class="score">${spec.fmt(s.score)}</div>
+      <div class="tag">${place.word} · ${s.next}</div>
+    </article>`;
+  }).join("");
+  document.getElementById("list").innerHTML = ranked.map((s, i) => {
+    const idle = s.intro + s.movement + s.sensors + s.puzzles === 0;
+    const width = idle ? 8 : Math.max(s.score ? 4 : 0, Math.round(100 * s.score / top));
+    const badge = idle ? (s.vibe || "📦 Not started") : s.vibe && i > 2 ? s.vibe : i === 0 ? "🏆 Pit lead" : i === 1 ? "🥈 Chasing" : i === 2 ? "🥉 Podium" : "🤖 In the field";
+    const rankMark = idle ? "😴" : i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : String(i + 1).padStart(2, "0");
+    return `<article class="row" style="animation-delay:${i * 35}ms">
+      <div class="rank">${rankMark}</div>
+      <div class="who"><div class="name">${s.name}<span class="badge">${badge}</span>${s.flags ? `<span class="flag">${s.flags} flagged</span>` : ""}</div>
+      <div class="meta">Intro ${s.intro}/3 · Movement ${s.movement}/10 · Sensors ${s.sensors}/10 · Puzzles ${s.puzzles}/10 · next ${s.next}</div></div>
+      <div class="barwrap"><div class="bar" data-w="${width}"></div></div>
+      <div class="pts">${spec.fmt(s.score)}</div>
+    </article>`;
+  }).join("");
+  requestAnimationFrame(() => document.querySelectorAll(".bar").forEach(b => b.style.width = b.dataset.w + "%"));
+  document.getElementById("note").textContent = "CS1, Oct 1, 2026, from the saved FTCsim progress page. Pit score = 40% movement + 25% intro + 25% sensors + 10% puzzles, each scaled to the full course. Four drivers finished movement: Avery W, Dioner G, Santi P, and Juan S. Avery is the only one deep into sensors (5). Santi has a flag on Movement Square even though that track is otherwise cleared. Nobody has started FTC Puzzles. Antonia skipped Line and Rearward and started at Half Moon. Names match the roster.";
+  burst();
+}
+document.getElementById("modes").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  mode = btn.dataset.mode;
+  document.querySelectorAll(".mode").forEach(b => b.classList.toggle("on", b === btn));
+  render();
+});
+render();
+</script>
+<script src="../tour-agent.js"></script>
+</body>
+</html>

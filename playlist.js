@@ -39,9 +39,19 @@ window.TOUR = {
       parts: '[data-mode]', hide: '#cycle'
     },
     {
+      title: 'CS1 Power Board',
+      file: 'leaderboards/cs1-power-board.html',
+      parts: '[data-mode]'
+    },
+    {
       title: 'CS1 FTCsim Grand Prix',
       file: 'leaderboards/cs1-ftcsim-grand-prix.html',
       replay: '#replay', ready: { selector: '#status', text: 'FINAL STANDINGS' }, settle: 1500, hide: '#full'
+    },
+    {
+      title: 'CS1 FTCsim Pit Board',
+      file: 'leaderboards/cs1-ftcsim-pit-board.html',
+      parts: '[data-mode]'
     },
     {
       title: 'CS1 FTCsim Chaos Mode',
