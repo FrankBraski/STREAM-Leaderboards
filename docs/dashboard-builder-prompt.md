@@ -115,7 +115,7 @@ Motion rules:
 
 ## 8. Age-appropriate and kind
 
-- **Names:** default to first name + last initial (`Camilla D.`). Use the preferred name when the roster shows one in parentheses (`(Alex) Zandra Daltro` → `Alex D.`). The settings drawer offers full name, initials, or "Player 01" numbering.
+- **Names:** default to first name + last initial (`Pat L.`). Use the preferred name when the roster shows one in parentheses (`(Sam) Jordan Rivera` → `Sam R.`). The settings drawer offers full name, initials, or "Player 01" numbering.
 - **No grades on the public board.** Do not show average scores or percent grades in rows. A score may appear only inside a positive award with a threshold (for example, Sharpshooter needs ≥ 70% average over ≥ 5 assignments).
 - **Lift people up, never down.** Badges and comments are for effort and milestones ("Movement Master", "Time Lord"). Never put a negative label on the bottom ranks. Students with zero activity are left off the race; a gentle line under the board can say "3 players still on the starting grid."
 - **Humor:** middle school is upbeat and simple. High school may have playful, upward-only commentary behind a settings toggle that is off by default. No roasting of individuals.

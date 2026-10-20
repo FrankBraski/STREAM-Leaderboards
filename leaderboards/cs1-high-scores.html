@@ -146,7 +146,9 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
 </aside>
 
 <script>
-const SAMPLE = {range:"Aug 3 – Oct 1, 2026", students:[{"name": "Angel Lagardera", "min": 136, "lvl": 3, "pro": 3, "done": 7, "avg": 26}, {"name": "Antonia Lutz", "min": 718, "lvl": 9, "pro": 5, "done": 28, "avg": 52}, {"name": "Avery Weaver", "min": 114, "lvl": 7, "pro": 7, "done": 12, "avg": 35}, {"name": "Catherine Ridley", "min": 107, "lvl": 9, "pro": 8, "done": 3, "avg": null}, {"name": "Cooper Wilson", "min": 376, "lvl": 26, "pro": 26, "done": 3, "avg": null}, {"name": "Dioner Gonzalez-Amaya", "min": 573, "lvl": 40, "pro": 40, "done": 4, "avg": null}, {"name": "Eden Etheridge", "min": 226, "lvl": 10, "pro": 9, "done": 13, "avg": 81}, {"name": "Frandy Rodas", "min": 7, "lvl": 0, "pro": 0, "done": 0, "avg": null}, {"name": "Jaylan Esquivel", "min": 382, "lvl": 40, "pro": 38, "done": 16, "avg": 26}, {"name": "Joseph Willis", "min": 243, "lvl": 1, "pro": 1, "done": 6, "avg": null}, {"name": "Juan Suarez-Rico", "min": 484, "lvl": 33, "pro": 33, "done": 0, "avg": null}, {"name": "Julie Ortiz", "min": 523, "lvl": 22, "pro": 22, "done": 7, "avg": 50}, {"name": "Karter Burris", "min": 136, "lvl": 2, "pro": 2, "done": 4, "avg": 13}, {"name": "Kelsie Nguyen", "min": 114, "lvl": 9, "pro": 9, "done": 24, "avg": 26}, {"name": "Melanie Inestra", "min": 429, "lvl": 9, "pro": 9, "done": 8, "avg": null}, {"name": "Moserat Nodine", "min": 315, "lvl": 25, "pro": 22, "done": 3, "avg": null}, {"name": "Owen Powers", "min": 273, "lvl": 20, "pro": 16, "done": 8, "avg": 13}, {"name": "Reed Plummer", "min": 198, "lvl": 8, "pro": 7, "done": 5, "avg": null}, {"name": "Santiago Parra", "min": 199, "lvl": 4, "pro": 4, "done": 26, "avg": 35}]};
+// Student names are kept as first name + last initial so full names are never stored or shown.
+const shortName = n => { n = String(n).replace(/\s+/g,' ').trim(); const m = n.match(/^\((.+?)\)\s*(.+)$/); const p = m ? [m[1], ...m[2].split(' ').slice(1)] : n.split(' '); return p[0] + (p.length > 1 ? ' ' + p[1][0] : ''); };
+const SAMPLE = {range:"Aug 3 – Oct 1, 2026", students:[{"name": "Angel L", "min": 136, "lvl": 3, "pro": 3, "done": 7, "avg": 26}, {"name": "Antonia L", "min": 718, "lvl": 9, "pro": 5, "done": 28, "avg": 52}, {"name": "Avery W", "min": 114, "lvl": 7, "pro": 7, "done": 12, "avg": 35}, {"name": "Catherine R", "min": 107, "lvl": 9, "pro": 8, "done": 3, "avg": null}, {"name": "Cooper W", "min": 376, "lvl": 26, "pro": 26, "done": 3, "avg": null}, {"name": "Dioner G", "min": 573, "lvl": 40, "pro": 40, "done": 4, "avg": null}, {"name": "Eden E", "min": 226, "lvl": 10, "pro": 9, "done": 13, "avg": 81}, {"name": "Frandy R", "min": 7, "lvl": 0, "pro": 0, "done": 0, "avg": null}, {"name": "Jaylan E", "min": 382, "lvl": 40, "pro": 38, "done": 16, "avg": 26}, {"name": "Joseph W", "min": 243, "lvl": 1, "pro": 1, "done": 6, "avg": null}, {"name": "Juan S", "min": 484, "lvl": 33, "pro": 33, "done": 0, "avg": null}, {"name": "Julie O", "min": 523, "lvl": 22, "pro": 22, "done": 7, "avg": 50}, {"name": "Karter B", "min": 136, "lvl": 2, "pro": 2, "done": 4, "avg": 13}, {"name": "Kelsie N", "min": 114, "lvl": 9, "pro": 9, "done": 24, "avg": 26}, {"name": "Melanie I", "min": 429, "lvl": 9, "pro": 9, "done": 8, "avg": null}, {"name": "Moserat N", "min": 315, "lvl": 25, "pro": 22, "done": 3, "avg": null}, {"name": "Owen P", "min": 273, "lvl": 20, "pro": 16, "done": 8, "avg": 13}, {"name": "Reed P", "min": 198, "lvl": 8, "pro": 7, "done": 5, "avg": null}, {"name": "Santiago P", "min": 199, "lvl": 4, "pro": 4, "done": 26, "avg": 35}]};
 const KEYS = ['min','lvl','pro','done'];
 const ROUNDS = ['TIME ON TASK','SKILLS LEVELED UP','SKILLS PROFICIENT+','ASSIGNMENTS DONE'];
 const ROW_H = 58, ROUND_MS = 2200;
@@ -285,7 +287,7 @@ function parseActivity(text){
   const i0 = t.lastIndexOf('Skills to Proficient+'); if (i0<0) throw new Error('Could not find the activity table in that file.');
   const res = {}; let i=i0+1; const num = x=>/^[\d,]+$/.test(x);
   while(i+4<t.length && num(t[i+1])&&num(t[i+2])&&num(t[i+3])&&num(t[i+4])){
-    const n=k=>+t[i+k].replace(/,/g,''); res[t[i]]={min:n(1),lvl:n(3),pro:n(4)}; i+=5;
+    const n=k=>+t[i+k].replace(/,/g,''); res[shortName(t[i])]={min:n(1),lvl:n(3),pro:n(4)}; i+=5;
   }
   const ri = t.indexOf('Date range'); const range = ri>=0 ? t[ri+1] : null;
   if (!Object.keys(res).length) throw new Error('No student rows found in the activity report.');
@@ -296,7 +298,7 @@ function parseScores(buf){
   const res = {};
   rows.slice(2).forEach(r=>{ if(!r[0]) return;
     const done = r.slice(3).filter(v=> v==='Completed' || typeof v==='number').length;
-    res[String(r[0]).trim()] = {done, avg: typeof r[1]==='number'? r[1] : null};
+    res[shortName(r[0])] = {done, avg: typeof r[1]==='number'? r[1] : null};
   });
   if (!Object.keys(res).length) throw new Error('No student rows found in the spreadsheet.');
   return res;

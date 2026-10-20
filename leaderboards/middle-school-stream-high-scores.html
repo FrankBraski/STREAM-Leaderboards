@@ -145,7 +145,9 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
 </aside>
 
 <script>
-const SAMPLE = {"range": "Aug 2 – Oct 1, 2026", "students": [{"name": "(Alex) Zandra Daltro", "min": 6, "lvl": 0, "pro": 0, "done": 0, "avg": null}, {"name": "Alan Gallegos", "min": 180, "lvl": 4, "pro": 4, "done": 4, "avg": null}, {"name": "Azu Diaz", "min": 137, "lvl": 4, "pro": 4, "done": 4, "avg": null}, {"name": "Camilla Dominguez", "min": 355, "lvl": 30, "pro": 30, "done": 24, "avg": 19}, {"name": "Dax Capuzzo", "min": 121, "lvl": 21, "pro": 21, "done": 0, "avg": null}, {"name": "Gabriela Diaz Reyes", "min": 129, "lvl": 0, "pro": 0, "done": 12, "avg": null}, {"name": "Juddy Blount", "min": 281, "lvl": 16, "pro": 16, "done": 0, "avg": null}, {"name": "Nyomi Johnson", "min": 97, "lvl": 2, "pro": 2, "done": 0, "avg": null}, {"name": "Obed Lemus-Palma", "min": 139, "lvl": 5, "pro": 2, "done": 1, "avg": null}]};
+// Student names are kept as first name + last initial so full names are never stored or shown.
+const shortName = n => { n = String(n).replace(/\s+/g,' ').trim(); const m = n.match(/^\((.+?)\)\s*(.+)$/); const p = m ? [m[1], ...m[2].split(' ').slice(1)] : n.split(' '); return p[0] + (p.length > 1 ? ' ' + p[1][0] : ''); };
+const SAMPLE = {"range": "Aug 2 – Oct 1, 2026", "students": [{"name": "Alex D", "min": 6, "lvl": 0, "pro": 0, "done": 0, "avg": null}, {"name": "Alan G", "min": 180, "lvl": 4, "pro": 4, "done": 4, "avg": null}, {"name": "Azu D", "min": 137, "lvl": 4, "pro": 4, "done": 4, "avg": null}, {"name": "Camilla D", "min": 355, "lvl": 30, "pro": 30, "done": 24, "avg": 19}, {"name": "Dax C", "min": 121, "lvl": 21, "pro": 21, "done": 0, "avg": null}, {"name": "Gabriela D", "min": 129, "lvl": 0, "pro": 0, "done": 12, "avg": null}, {"name": "Juddy B", "min": 281, "lvl": 16, "pro": 16, "done": 0, "avg": null}, {"name": "Nyomi J", "min": 97, "lvl": 2, "pro": 2, "done": 0, "avg": null}, {"name": "Obed L", "min": 139, "lvl": 5, "pro": 2, "done": 1, "avg": null}]};
 const KEYS = ['min','lvl','pro','done'];
 const ROUNDS = ['TIME ON TASK','SKILLS LEVELED UP','SKILLS PROFICIENT+','ASSIGNMENTS DONE'];
 const ROW_H = 58, ROUND_MS = 2200;
@@ -157,7 +159,7 @@ let settings = Object.assign({topN:10, nameStyle:'first', w:[1,10,10,15]}, store
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function displayName(s, i){
-  // "(Alex) Zandra Daltro" -> preferred first name "Alex"
+  // "(Sam) Jordan R" -> preferred first name "Sam"
   const pm = s.name.trim().match(/^\((.+?)\)\s*(.+)$/);
   const parts = pm ? [pm[1], ...pm[2].split(/\s+/).slice(1)] : s.name.trim().split(/\s+/);
   switch(settings.nameStyle){
@@ -307,7 +309,7 @@ function parseActivity(text){
   const i0 = t.lastIndexOf('Skills to Proficient+'); if (i0<0) throw new Error('Could not find the activity table in that file.');
   const res = {}; let i=i0+1; const num = x=>/^[\d,]+$/.test(x);
   while(i+4<t.length && num(t[i+1])&&num(t[i+2])&&num(t[i+3])&&num(t[i+4])){
-    const n=k=>+t[i+k].replace(/,/g,''); res[t[i].replace(/\s+/g,' ')]={min:n(1),lvl:n(3),pro:n(4)}; i+=5;
+    const n=k=>+t[i+k].replace(/,/g,''); res[shortName(t[i])]={min:n(1),lvl:n(3),pro:n(4)}; i+=5;
   }
   const ri = t.indexOf('Date range'); const range = ri>=0 ? t[ri+1] : null;
   if (!Object.keys(res).length) throw new Error('No student rows found in the activity report.');
@@ -319,7 +321,7 @@ function parseScores(buf){
   rows.slice(2).forEach(r=>{ if(!r[0]) return;
     const done = r.slice(3).filter(v=> v==='Completed' || typeof v==='number' || /^\s*\d+(\.\d+)?\s*$/.test(String(v??''))).length;
     const a = typeof r[1]==='number' ? r[1] : (/^\s*\d+(\.\d+)?\s*$/.test(String(r[1]??'')) ? +r[1] : null);
-    res[String(r[0]).replace(/\s+/g,' ').trim()] = {done, avg: a};
+    res[shortName(r[0])] = {done, avg: a};
   });
   if (!Object.keys(res).length) throw new Error('No student rows found in the spreadsheet.');
   return res;

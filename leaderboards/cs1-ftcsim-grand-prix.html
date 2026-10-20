@@ -155,17 +155,19 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
 </aside>
 
 <script>
+// Student names are kept as first name + last initial so full names are never stored or shown.
+const shortName = n => { n = String(n).replace(/\s+/g,' ').trim(); const m = n.match(/^\((.+?)\)\s*(.+)$/); const p = m ? [m[1], ...m[2].split(' ').slice(1)] : n.split(' '); return p[0] + (p.length > 1 ? ' ' + p[1][0] : ''); };
 const COURSES = [{key:'intro',label:'Intro',max:3,color:'var(--intro)'},{key:'move',label:'Movement',max:10,color:'var(--move)'},
                  {key:'sense',label:'Sensors',max:10,color:'var(--sense)'},{key:'puzz',label:'Puzzles',max:10,color:'var(--puzz)'}];
 const TOTAL = 33;
-const SAMPLE = {"asof": "Oct 1, 2026", "classroom": "CS1 2026-2027", "drivers": [{"name": "Antonia Lutz", "intro": 1, "move": 2, "sense": 0, "puzz": 0}, {"name": "Cooper Wilson", "intro": 3, "move": 4, "sense": 0, "puzz": 0}, {"name": "Joseph W", "intro": 3, "move": 4, "sense": 0, "puzz": 0}, {"name": "Avery W", "intro": 3, "move": 10, "sense": 5, "puzz": 0}, {"name": "Juan S", "intro": 3, "move": 10, "sense": 0, "puzz": 0}, {"name": "Catherine R", "intro": 3, "move": 6, "sense": 0, "puzz": 0}, {"name": "Owen P", "intro": 3, "move": 7, "sense": 0, "puzz": 0}, {"name": "Reed P", "intro": 3, "move": 5, "sense": 0, "puzz": 0}, {"name": "Santi P", "intro": 3, "move": 10, "sense": 1, "puzz": 0}, {"name": "Julie O", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Mosey N", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Kelsie N", "intro": 3, "move": 8, "sense": 0, "puzz": 0}, {"name": "Melanie I", "intro": 2, "move": 2, "sense": 0, "puzz": 0}, {"name": "Dioner G", "intro": 3, "move": 10, "sense": 1, "puzz": 0}, {"name": "Eden E", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Jaylan E", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Karter B", "intro": 3, "move": 5, "sense": 0, "puzz": 0}]};
+const SAMPLE = {"asof": "Oct 1, 2026", "classroom": "CS1 2026-2027", "drivers": [{"name": "Antonia L", "intro": 1, "move": 2, "sense": 0, "puzz": 0}, {"name": "Cooper W", "intro": 3, "move": 4, "sense": 0, "puzz": 0}, {"name": "Joseph W", "intro": 3, "move": 4, "sense": 0, "puzz": 0}, {"name": "Avery W", "intro": 3, "move": 10, "sense": 5, "puzz": 0}, {"name": "Juan S", "intro": 3, "move": 10, "sense": 0, "puzz": 0}, {"name": "Catherine R", "intro": 3, "move": 6, "sense": 0, "puzz": 0}, {"name": "Owen P", "intro": 3, "move": 7, "sense": 0, "puzz": 0}, {"name": "Reed P", "intro": 3, "move": 5, "sense": 0, "puzz": 0}, {"name": "Santi P", "intro": 3, "move": 10, "sense": 1, "puzz": 0}, {"name": "Julie O", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Mosey N", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Kelsie N", "intro": 3, "move": 8, "sense": 0, "puzz": 0}, {"name": "Melanie I", "intro": 2, "move": 2, "sense": 0, "puzz": 0}, {"name": "Dioner G", "intro": 3, "move": 10, "sense": 1, "puzz": 0}, {"name": "Eden E", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Jaylan E", "intro": 3, "move": 3, "sense": 0, "puzz": 0}, {"name": "Karter B", "intro": 3, "move": 5, "sense": 0, "puzz": 0}]};
 const LANE_H = 58, RACE_MS = 4200;
 const $ = id => document.getElementById(id);
 const store = {get(k){try{return JSON.parse(localStorage.getItem('ftcsimgp-cs1:'+k))}catch(e){return null}},
                set(k,v){try{localStorage.setItem('ftcsimgp-cs1:'+k,JSON.stringify(v))}catch(e){}}};
 let data = store.get('data') || structuredClone(SAMPLE);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-// "Cooper Wilson" -> "Cooper W"; FTCsim short names like "Owen GP" stay as they are
+// "Pat Lee" -> "Pat L"; FTCsim short names like "Owen GP" stay as they are
 const short = n => { const p=n.trim().split(/\s+/); return p.length>1 && p[p.length-1].length>3 ? p.slice(0,-1).join(' ')+' '+p[p.length-1][0] : n.trim(); };
 const sum = d => COURSES.reduce((a,c)=>a+(+d[c.key]||0),0);
 const depth = d => (+d.puzz||0)*1e6 + (+d.sense||0)*1e3 + (+d.move||0);
@@ -301,7 +303,7 @@ function parseFtcsim(text){
   const drivers=[];
   table.querySelectorAll('tr').forEach(tr=>{
     const tds=[...tr.querySelectorAll('td')]; if(tds.length<2) return;
-    const name=tds[0].textContent.replace(/\s+/g,' ').trim(); if(!name) return;
+    const name=shortName(tds[0].textContent); if(!name) return;
     const d={name};
     COURSES.forEach(c=>{const td=tds[col[c.key]]; d[c.key]=td?Math.min(c.max,td.querySelectorAll('li.complete').length):0;});
     drivers.push(d);
