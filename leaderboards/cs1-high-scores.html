@@ -83,12 +83,28 @@ select,input[type=number]{font:inherit;background:var(--panel);color:var(--ink);
 canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
 @media (max-width:640px){.row{grid-template-columns:36px minmax(0,1fr) 70px;}.track{display:none}.podium{min-height:190px}.p1 .block{height:120px}.p2 .block{height:90px}.p3 .block{height:70px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* Wide screens (16:9 classroom TVs): title, medal stand, class stats and awards stay fixed on the left;
+   the long list sits on the right, and scrolling the page moves only the list. */
+@media (min-width:1100px) and (min-aspect-ratio:4/3){
+  .wrap{max-width:none;width:auto;margin:0;display:grid;grid-template-columns:minmax(0,42fr) minmax(0,58fr);
+    gap:clamp(20px,2vw,44px);align-items:start;padding:0 clamp(20px,2vw,44px)}
+  .side{position:sticky;top:0;height:100vh;overflow:hidden;padding:clamp(14px,2.6vh,30px) 0;display:flex;flex-direction:column;gap:clamp(8px,1.4vh,16px)}
+  .side > *{margin-top:0;margin-bottom:0;flex-shrink:0}
+  .main{padding:clamp(14px,2.6vh,30px) 0 90px;min-width:0}
+  header{flex-direction:column;align-items:flex-start;gap:12px}
+  h1{font-size:clamp(30px,3vw,64px)}
+  .podium{min-height:0}
+  .p1 .block{height:clamp(70px,14vh,170px)} .p2 .block{height:clamp(52px,10vh,125px)} .p3 .block{height:clamp(40px,7.5vh,95px)}
+  .awards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .legend{margin:12px 4px 0}
+}
 </style>
 </head>
 <body>
 <canvas id="fx"></canvas>
 <div class="wrap">
-  <header>
+<div class="side">
+<header>
     <div>
       <div class="eyebrow">DONOVAN CATHOLIC · COMPUTER SCIENCE I</div>
       <h1>CS1 <span class="accent">HIGH SCORES</span></h1>
@@ -100,18 +116,19 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
       <button id="gear" aria-expanded="false" aria-controls="drawer">SETTINGS</button>
     </div>
   </header>
-
-  <div class="round" id="round" aria-live="polite"></div>
-  <section class="podium" id="podium" aria-label="Top three"></section>
-  <section class="board" id="board" aria-label="Leaderboard"></section>
-  <div class="legend">
+<div class="round" id="round" aria-live="polite"></div>
+<section class="podium" id="podium" aria-label="Top three"></section>
+<h2>CLASS AWARDS</h2>
+<section class="awards" id="awards"></section>
+<p class="formula" id="formula"></p>
+</div>
+<div class="main">
+<section class="board" id="board" aria-label="Leaderboard"></section>
+<div class="legend">
     <span><i class="s0"></i>Time on task</span><span><i class="s1"></i>Skills leveled up</span>
     <span><i class="s2"></i>Skills Proficient+</span><span><i class="s3"></i>Assignments done</span>
   </div>
-
-  <h2>CLASS AWARDS</h2>
-  <section class="awards" id="awards"></section>
-  <p class="formula" id="formula"></p>
+</div>
 </div>
 
 <aside class="drawer" id="drawer" aria-label="Settings">
@@ -330,6 +347,7 @@ $('close').onclick = ()=>{ $('drawer').classList.remove('open'); $('gear').setAt
 $('full').onclick = ()=>{ const d=document.documentElement; (document.fullscreenElement? document.exitFullscreen(): d.requestFullscreen?.())?.catch?.(()=>{}); };
 syncInputs(); build();
 </script>
+<script src="../fit-side.js"></script>
 <script src="../tour-agent.js"></script>
 </body>
 </html>

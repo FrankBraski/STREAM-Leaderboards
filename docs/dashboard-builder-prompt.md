@@ -67,7 +67,7 @@ When tabs change (section 6), use the same reordering: rows slide to the new ord
   - bronze `#f2ae7c → #c46a32`
 - Show the rank number big on each block. Put the student's name and XP above it, and the word `CHAMPION` over gold.
 - **Hold the medal stand's space from the start** with empty pedestals showing `?`, so the board doesn't jump. Fill in the names when the race finishes.
-- Keep the medal stand no taller than 230 px, so the race board starts within the top 450 px of a 1080 px screen and its top rows stay visible during the race.
+- The medal stand sits in the left column (section 7), so the race board on the right stays fully visible during the race.
 
 ## 6. Tabs (optional single-measure views)
 
@@ -79,17 +79,29 @@ When tabs change (section 6), use the same reordering: rows slide to the new ord
 
 ## 7. Layout for a classroom TV
 
-Design for 1920 × 1080, viewed from 15–25 feet. Order, top to bottom:
+Design for large 16:9 displays (1920 × 1080), viewed from 15–25 feet. Use **two columns**: wrap everything in `<div class="wrap">`, with `<div class="side">` on the left and `<div class="main">` on the right.
 
-1. **Header (≤ 200 px):** school eyebrow (`DONOVAN CATHOLIC · COMPUTER SCIENCE I`), big title (`CS1 HIGH SCORES`), and a subtitle with the platform and date range.
+**Left column (`.side`, about 42% wide): fixed, never scrolls.**
+1. **Header:** school eyebrow (`DONOVAN CATHOLIC · COMPUTER SCIENCE I`), big title (`CS1 HIGH SCORES`), a subtitle with the platform and date range, and the tab buttons.
 2. **Round banner.**
-3. **Medal stand (≤ 230 px).**
-4. **Race board:** one row per student, max 4 columns: rank, name, stacked bar, XP.
-5. **Color legend** (directly under or above the board).
-6. **Class awards row.**
-7. **Formula footer.**
+3. **Medal stand.**
+4. **Class stats tiles** (optional, 2 × 2: e.g. students, total hours, skills mastered, current leader).
+5. **Class awards**, 2 cards per row.
+6. **Formula footer.**
 
-Long lists are fine: the tour scrolls down slowly after `FINAL SCORES` and returns to the top for the next screen. **Do not auto-scroll in the page itself.**
+**Right column (`.main`, about 58% wide): the long list.**
+- The race board, one row per student, max 4 columns: rank, name, stacked bar, XP.
+- The color legend, directly above or below it.
+
+How to build it:
+- Apply the two columns only inside `@media (min-width:1100px) and (min-aspect-ratio:4/3)`, so narrow windows stack the columns like a normal page.
+- The CSS that makes it work:
+  - `.wrap`: `display:grid; grid-template-columns:minmax(0,42fr) minmax(0,58fr); align-items:start`
+  - `.side`: `position:sticky; top:0; height:100vh; overflow:hidden; display:flex; flex-direction:column`
+  - children of `.side`: `flex-shrink:0`
+- The page itself scrolls normally, but only the right column moves, because the left column is sticky.
+- Include `<script src="../fit-side.js"></script>`. It shrinks the left column on short screens so it always fits one screen height. Still size the left column to fit 1080 px without it, using `vh`-based heights for the medal-stand blocks.
+- Long lists are fine: the tour scrolls down slowly after `FINAL SCORES` and returns to the top for the next screen. **Do not auto-scroll in the page itself.**
 
 Readability minimums at 1920 × 1080:
 - Student names and XP numbers ≥ 22 px.
@@ -160,7 +172,7 @@ The tour drives the page through these. Use these exact names:
 
 - [ ] Rows start alphabetical and slide (not jump) to new ranks every round and on every tab change.
 - [ ] Every bar is a stack of measure-colored segments, with a matching legend.
-- [ ] The race board's top rows are visible during the race on a 1920 × 1080 screen without scrolling.
+- [ ] On a 1920 × 1080 screen: title, medal stand, stats and awards on the left, the list on the right; scrolling moves only the right column, and the left column fits without being cut off (also check 1366 × 768).
 - [ ] Gold, silver and bronze stand appears after `FINAL SCORES`; ties are handled as stated.
 - [ ] XP is whole numbers; the formula footer matches the code; other screens on the same platform use the same formula.
 - [ ] No text under 14 px; names and scores ≥ 22 px.

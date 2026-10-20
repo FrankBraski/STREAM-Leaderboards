@@ -96,12 +96,26 @@ td input[type=number]{width:58px}
 canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
 @media (max-width:800px){.row2{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Wide screens (16:9 classroom TVs): title, medal stand, class stats and awards stay fixed on the left;
+   the long list sits on the right, and scrolling the page moves only the list. */
+@media (min-width:1100px) and (min-aspect-ratio:4/3){
+  .wrap{max-width:none;width:auto;margin:0;display:grid;grid-template-columns:minmax(0,42fr) minmax(0,58fr);
+    gap:clamp(20px,2vw,44px);align-items:start;padding:0 clamp(20px,2vw,44px)}
+  .side{position:sticky;top:0;height:100vh;overflow:hidden;padding:clamp(14px,2.6vh,30px) 0;display:flex;flex-direction:column;gap:clamp(8px,1.4vh,16px)}
+  .side > *{margin-top:0;margin-bottom:0;flex-shrink:0}
+  .main{padding:clamp(14px,2.6vh,30px) 0 90px;min-width:0}
+  header{flex-direction:column;align-items:flex-start;gap:12px}
+  h1{font-size:clamp(30px,3vw,64px)}
+  .row2{grid-template-columns:1fr;gap:clamp(8px,1.4vh,16px)}
+  .badges{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style>
 </head>
 <body>
 <canvas id="fx"></canvas>
 <div class="wrap">
-  <header>
+<div class="side">
+<header>
     <div>
       <div class="eyebrow">DONOVAN CATHOLIC · COMPUTER SCIENCE I · FTCSIM.ORG</div>
       <h1>CS1 FTCSIM <span class="accent">GRAND PRIX</span></h1>
@@ -113,16 +127,8 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
       <button id="edit" aria-expanded="false" aria-controls="drawer">UPDATE PROGRESS</button>
     </div>
   </header>
-
-  <div class="status" id="status" aria-live="polite"></div>
-  <section class="track" aria-label="Race track">
-    <div class="scale"><span></span>
-      <div class="zones"><span class="z0">INTRO</span><span class="z1">MOVEMENT</span><span class="z2">SENSORS</span><span class="z3">PUZZLES</span></div><span></span></div>
-    <div class="lanes" id="lanes"></div>
-  </section>
-  <p class="grid-note" id="gridNote"></p>
-
-  <div class="row2">
+<div class="status" id="status" aria-live="polite"></div>
+<div class="row2">
     <section class="card team">
       <h2>TEAM PROGRESS</h2>
       <div class="big" id="teamBig">0<small> / 0 puzzles</small></div>
@@ -134,7 +140,16 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
       <div class="badges" id="badges"></div>
     </section>
   </div>
-  <p class="formula">Each puzzle completed moves a robot one space. Tracks follow the FTCsim course order: Intro (3), Movement (10), Sensors (10), Puzzles (10). Ties go to whoever is further into the later courses, then alphabetical.</p>
+<p class="formula">Each puzzle completed moves a robot one space. Tracks follow the FTCsim course order: Intro (3), Movement (10), Sensors (10), Puzzles (10). Ties go to whoever is further into the later courses, then alphabetical.</p>
+</div>
+<div class="main">
+<section class="track" aria-label="Race track">
+    <div class="scale"><span></span>
+      <div class="zones"><span class="z0">INTRO</span><span class="z1">MOVEMENT</span><span class="z2">SENSORS</span><span class="z3">PUZZLES</span></div><span></span></div>
+    <div class="lanes" id="lanes"></div>
+  </section>
+<p class="grid-note" id="gridNote"></p>
+</div>
 </div>
 
 <aside class="drawer" id="drawer" aria-label="Update progress">
@@ -321,6 +336,7 @@ $('replay').onclick=build;
 $('full').onclick=()=>{const d=document.documentElement;(document.fullscreenElement?document.exitFullscreen():d.requestFullscreen?.())?.catch?.(()=>{});};
 build();
 </script>
+<script src="../fit-side.js"></script>
 <script src="../tour-agent.js"></script>
 </body>
 </html>

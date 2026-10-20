@@ -59,11 +59,25 @@ button:hover,button.active{background:#24436b;border-color:var(--cyan);transform
  .panelhead,.row{grid-template-columns:48px 1.6fr 1fr 90px}
  .barwrap{display:block} .student{font-size:14px} .value{font-size:15px}
 }
+/* Wide screens (16:9 classroom TVs): title, medal stand, class stats and awards stay fixed on the left;
+   the long list sits on the right, and scrolling the page moves only the list. */
+@media (min-width:1100px) and (min-aspect-ratio:4/3){
+  .wrap{max-width:none;width:auto;margin:0;display:grid;grid-template-columns:minmax(0,42fr) minmax(0,58fr);
+    gap:clamp(20px,2vw,44px);align-items:start;padding:0 clamp(20px,2vw,44px)}
+  .side{position:sticky;top:0;height:100vh;overflow:hidden;padding:clamp(14px,2.6vh,30px) 0;display:flex;flex-direction:column;gap:clamp(8px,1.4vh,16px)}
+  .side > *{margin-top:0;margin-bottom:0;flex-shrink:0}
+  .main{padding:clamp(14px,2.6vh,30px) 0 90px;min-width:0}
+  header{flex-direction:column;align-items:flex-start}
+  .controls{justify-content:flex-start}
+  h1{font-size:clamp(26px,2.4vw,50px)}
+  .hero{margin:0}
+}
 </style>
 </head>
 <body>
 <div class="flash" id="flash"></div>
 <div class="wrap">
+<div class="side">
 <header>
   <div>
     <div class="logo">DONOVAN CATHOLIC • COMPUTER SCIENCE I</div>
@@ -80,22 +94,22 @@ button:hover,button.active{background:#24436b;border-color:var(--cyan);transform
     <button id="cycle">▶ Auto-Cycle</button>
   </div>
 </header>
-
 <div class="ticker" id="ticker">Overall XP = 1 × minute + 20 × Proficient+ skill + 30 × assignment completion percentage point. Average score is shown separately because not every student has one yet.</div>
-
 <div class="hero">
   <div class="podium second" id="p2"></div>
   <div class="podium first" id="p1"></div>
   <div class="podium third" id="p3"></div>
 </div>
-
+<div class="foot">
+ <div>🔥 Badges highlight standout effort — not grades.</div>
+ <div>Tip: press <b>F11</b> for full-screen classroom display.</div>
+</div>
+</div>
+<div class="main">
 <div class="panel">
   <div class="panelhead"><div>Rank</div><div>Coder</div><div>Progress</div><div style="text-align:right">Result</div></div>
   <div id="board"></div>
 </div>
-<div class="foot">
- <div>🔥 Badges highlight standout effort — not grades.</div>
- <div>Tip: press <b>F11</b> for full-screen classroom display.</div>
 </div>
 </div>
 
@@ -196,6 +210,7 @@ document.getElementById("cycle").onclick=(e)=>{
 };
 render(true);
 </script>
+<script src="../fit-side.js"></script>
 <script src="../tour-agent.js"></script>
 </body>
 </html>
