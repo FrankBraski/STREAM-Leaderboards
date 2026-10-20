@@ -36,3 +36,7 @@ To add a leaderboard (for example CS2 High Scores):
 3. Add an entry for it in `playlist.js` (there is a commented CS2 entry ready to uncomment).
 
 Each leaderboard still works on its own; the tour script does nothing unless the page is inside the tour.
+
+## For coding agents and helpers
+
+`AGENTS.md` is the operating manual: how the pieces fit, the rules (privacy first), and a runbook for each role (data updater, screen builder, reviewer, publisher). `docs/dashboard-builder-prompt.md` is the design spec for new screens. Run `npm run check` before pushing; GitHub runs the same check on every push.
