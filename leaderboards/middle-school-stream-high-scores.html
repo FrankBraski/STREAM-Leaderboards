@@ -99,10 +99,11 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
   .legend{margin:0 4px 12px}
 }
 </style>
+<link rel="stylesheet" href="../moneyball/embed.css">
 </head>
 <body>
 <canvas id="fx"></canvas>
-<div class="wrap">
+<div class="wrap has-moneyball">
 <div class="side">
 <header>
     <div>
@@ -130,6 +131,12 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
 <section class="board" id="board" aria-label="Leaderboard"></section>
 </div>
 </div>
+<iframe
+  class="moneyball-frame"
+  src="../moneyball/moneyball-panel.html?class=MS101&layout=side"
+  title="MS STREAM 101 MoneyBall career goals"
+></iframe>
+
 
 <aside class="drawer" id="drawer" aria-label="Settings">
   <h3>SETTINGS</h3>

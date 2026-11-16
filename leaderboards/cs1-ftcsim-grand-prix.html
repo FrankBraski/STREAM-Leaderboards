@@ -110,10 +110,11 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
   .badges{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 </style>
+<link rel="stylesheet" href="../moneyball/embed.css">
 </head>
 <body>
 <canvas id="fx"></canvas>
-<div class="wrap">
+<div class="wrap has-moneyball">
 <div class="side">
 <header>
     <div>
@@ -151,6 +152,12 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
 <p class="grid-note" id="gridNote"></p>
 </div>
 </div>
+<iframe
+  class="moneyball-frame"
+  src="../moneyball/moneyball-panel.html?class=CS1&layout=side"
+  title="CS1 MoneyBall opportunities"
+></iframe>
+
 
 <aside class="drawer" id="drawer" aria-label="Update progress">
   <h3>UPDATE PROGRESS</h3>

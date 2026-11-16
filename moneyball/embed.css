@@ -1,0 +1,28 @@
+/* MoneyBall class panel for STREAM leaderboards.
+   On classroom TVs (wide 16:9), reserve a right-hand 4:9 column (25vw × 100vh)
+   so the existing .wrap/.side/.main layout shrinks instead of being covered.
+   The iframe is position:fixed so document scrolling (tour-agent.js) and
+   fit-side.js (window.innerHeight) keep working. Hidden on narrower screens. */
+
+.moneyball-frame {
+  display: none;
+}
+
+@media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
+  .wrap.has-moneyball {
+    margin-right: 25vw;
+    box-sizing: border-box;
+  }
+
+  .moneyball-frame {
+    display: block;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 25vw;
+    height: 100vh;
+    border: 0;
+    background: #060f24;
+    z-index: 15; /* above canvas#fx (10), below settings .drawer (20) */
+  }
+}

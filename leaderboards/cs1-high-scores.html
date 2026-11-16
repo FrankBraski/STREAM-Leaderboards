@@ -99,10 +99,11 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
   .legend{margin:12px 4px 0}
 }
 </style>
+<link rel="stylesheet" href="../moneyball/embed.css">
 </head>
 <body>
 <canvas id="fx"></canvas>
-<div class="wrap">
+<div class="wrap has-moneyball">
 <div class="side">
 <header>
     <div>
@@ -130,6 +131,12 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
   </div>
 </div>
 </div>
+<iframe
+  class="moneyball-frame"
+  src="../moneyball/moneyball-panel.html?class=CS1&layout=side"
+  title="CS1 MoneyBall opportunities"
+></iframe>
+
 
 <aside class="drawer" id="drawer" aria-label="Settings">
   <h3>SETTINGS</h3>

@@ -107,9 +107,10 @@
   .podium{margin:0;min-height:0}
 }
 </style>
+<link rel="stylesheet" href="../moneyball/embed.css">
 </head>
 <body>
-<div class="wrap">
+<div class="wrap has-moneyball">
 <div class="side">
 <header>
     <div>
@@ -133,6 +134,12 @@
 <section class="list" id="list"></section>
 </div>
 </div>
+<iframe
+  class="moneyball-frame"
+  src="../moneyball/moneyball-panel.html?class=CS1&layout=side"
+  title="CS1 MoneyBall opportunities"
+></iframe>
+
 <script>
 const students = [
   {name:"Angel L", min:136, skills:4, leveled:3, prof:3, avg:26, pct:5},
