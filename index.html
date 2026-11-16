@@ -57,6 +57,10 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .keys{flex-basis:100%;font-size:12px;color:var(--dim)}
 @media (max-width:560px){.keys{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+#catalog { display:flex; flex-wrap:wrap; gap:8px 14px; justify-content:center; margin:8px 12px 0; font-size:12px; }
+#catalog a { color:#c9d3e8; text-decoration:none; border-bottom:1px solid #1d2b55; }
+#catalog a:hover, #catalog a:focus-visible { color:#ffd23f; border-color:#ffd23f; }
 </style>
 </head>
 <body>
@@ -85,6 +89,19 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
     <button id="fs" title="Fullscreen (F)" aria-label="Fullscreen"><svg viewBox="0 0 24 24"><path d="M4 4h6v2.5H6.5V10H4zm10 0h6v6h-2.5V6.5H14zM4 14h2.5v3.5H10V20H4zm13.5 0H20v6h-6v-2.5h3.5z"/></svg></button>
   </div>
   <div class="keys">← → skip · Shift+← → change leaderboard · Space pause · F fullscreen · Scroll or click a leaderboard to look around; the tour picks up again after you stop.</div>
+
+<nav id="catalog" aria-label="All leaderboards">
+  <a href="leaderboards/middle-school-stream-high-scores.html">MS STREAM</a>
+  <a href="leaderboards/cs1-high-scores.html">CS1 High Scores</a>
+  <a href="leaderboards/cs2-high-scores.html">CS2 High Scores</a>
+  <a href="leaderboards/lab102-high-scores.html">Lab 102 High Scores</a>
+  <a href="leaderboards/cs1-code-quest.html">CS1 Code Quest</a>
+  <a href="leaderboards/cs1-power-board.html">CS1 Power Board</a>
+  <a href="leaderboards/cs1-ftcsim-grand-prix.html">CS1 Grand Prix</a>
+  <a href="leaderboards/cs1-ftcsim-pit-board.html">CS1 Pit Board</a>
+  <a href="leaderboards/cs1-ftcsim-chaos-mode.html">CS1 Chaos Mode</a>
+  <a href="moneyball/moneyball.html">MoneyBall</a>
+</nav>
 </div>
 
 <script src="playlist.js"></script>

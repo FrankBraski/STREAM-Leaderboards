@@ -33,7 +33,7 @@ Edit `playlist.js`: board order, how long the tour waits before resuming, scroll
 To add a leaderboard (for example CS2 High Scores):
 1. Put its `.html` file in `leaderboards/`.
 2. Add `<script src="../tour-agent.js"></script>` just before its `</body>`.
-3. Add an entry for it in `playlist.js` (there is a commented CS2 entry ready to uncomment).
+3. Add an entry for it in `playlist.js`.
 
 Each leaderboard still works on its own; the tour script does nothing unless the page is inside the tour.
 

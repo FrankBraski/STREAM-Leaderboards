@@ -27,12 +27,16 @@ window.TOUR = {
       file: 'leaderboards/cs1-high-scores.html',
       replay: '#replay', ready: { selector: '#round', text: 'FINAL SCORES' }, settle: 2500, hide: '#full'
     },
-    // CS2 High Scores: add its file to the leaderboards folder, then uncomment.
-    // {
-    //   title: 'CS2 High Scores',
-    //   file: 'leaderboards/cs2-high-scores.html',
-    //   replay: '#replay', ready: { selector: '#round', text: 'FINAL SCORES' }, settle: 2500, hide: '#full'
-    // },
+    {
+      title: 'CS2 High Scores',
+      file: 'leaderboards/cs2-high-scores.html',
+      replay: '#replay', ready: { selector: '#round', text: 'FINAL SCORES' }, settle: 2500, hide: '#full'
+    },
+    {
+      title: 'STREAM Lab 102 High Scores',
+      file: 'leaderboards/lab102-high-scores.html',
+      replay: '#replay', ready: { selector: '#round', text: 'FINAL SCORES' }, settle: 2500, hide: '#full'
+    },
     {
       title: 'CS1 Code Quest',
       file: 'leaderboards/cs1-code-quest.html',

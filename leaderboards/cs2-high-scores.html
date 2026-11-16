@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CS2 High Scores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: arcade high-score cabinet — header, podium, live race board, award cards. Navy, white and silver. */
+:root{
+  --bg:#060b1d; --panel:#0c1530; --line:#1d2b55; --ink:#eef3ff; --dim:#8c9cc8;
+  --blue:#3f8cff; --gold:#ffd23f; --silver:#c9d3e8; --bronze:#e08a4c; --green:#4cf0a0; --pink:#ff4f8b;
+  --pixel:'Silkscreen', 'Courier New', monospace; --body:'Chakra Petch', system-ui, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh;
+  background-image:radial-gradient(ellipse at 50% -10%, #12306e 0%, transparent 55%),
+  repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 4px);}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img.logo{height:36px;width:auto;display:block}
+.eyebrow{font-family:var(--pixel);font-size:14px;letter-spacing:.12em;color:var(--blue)}
+h1{font-family:var(--pixel);font-weight:700;font-size:clamp(34px,6vw,64px);line-height:1;margin:.15em 0 .1em;
+  text-shadow:0 0 18px rgba(63,140,255,.55),3px 3px 0 #10225a}
+h1 .accent{color:var(--silver);text-shadow:0 0 18px rgba(201,211,232,.45),3px 3px 0 #1a2744}
+.sub{color:var(--dim);font-size:15px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button,.btn{font-family:var(--pixel);font-size:13px;letter-spacing:.06em;background:var(--panel);color:var(--ink);
+  border:2px solid var(--line);padding:10px 14px;border-radius:6px;cursor:pointer}
+button:hover{border-color:var(--blue)} button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+#roastbtn{width:44px;padding:10px 0;font-size:18px;opacity:.7}
+#roastbtn[aria-pressed="true"]{opacity:1;border-color:var(--gold)}
+#roastb{font-family:var(--pixel);font-size:13px;color:var(--gold);letter-spacing:.08em;opacity:0;min-width:7em}
+html.roast-on #roastb{opacity:1}
+.round{font-family:var(--pixel);font-size:clamp(14px,2vw,20px);color:var(--gold);min-height:1.6em;margin:6px 0 10px;letter-spacing:.06em}
+.round .of{color:var(--dim)}
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:end;margin:8px 0 26px;min-height:230px}
+.step{text-align:center;opacity:0;transform:translateY(40px);transition:opacity .6s, transform .7s cubic-bezier(.2,1.4,.4,1)}
+.step.show{opacity:1;transform:none}
+.step .who{font-weight:700;font-size:clamp(16px,2.2vw,24px);margin-bottom:6px;min-width:0;overflow-wrap:anywhere}
+.step .xp{font-family:var(--pixel);color:var(--dim);font-size:13px;margin-bottom:8px}
+.block{border-radius:8px 8px 0 0;display:grid;place-items:center;font-family:var(--pixel);font-size:44px;color:#0b1020;border:3px solid rgba(255,255,255,.25)}
+.p1 .block{height:170px;background:linear-gradient(180deg,#ffe27a,var(--gold));box-shadow:0 0 40px rgba(255,210,63,.45)}
+.p2 .block{height:125px;background:linear-gradient(180deg,#eef2fb,var(--silver))}
+.p3 .block{height:95px;background:linear-gradient(180deg,#f2ae7c,var(--bronze))}
+.p1{order:2}.p2{order:1}.p3{order:3}
+.crown{font-family:var(--pixel);color:var(--gold);font-size:13px;letter-spacing:.1em;margin-bottom:4px}
+.board{position:relative;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:10px;overflow:hidden}
+.row{position:absolute;left:10px;right:10px;height:52px;display:grid;grid-template-columns:52px minmax(0,1.4fr) minmax(0,3fr) 92px;
+  align-items:center;gap:12px;padding:0 10px;border-radius:6px;transition:transform .45s cubic-bezier(.3,1.2,.4,1);will-change:transform}
+html.roast-on .row{height:70px;grid-template-rows:52px 16px}
+.row:nth-child(odd){background:rgba(255,255,255,.02)}
+.rank{font-family:var(--pixel);font-size:20px;color:var(--dim);text-align:center}
+.row.r1 .rank{color:var(--gold)} .row.r2 .rank{color:var(--silver)} .row.r3 .rank{color:var(--bronze)}
+.who{min-width:0}
+.name{font-weight:600;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badges{display:inline;margin-left:6px;font-size:14px;letter-spacing:.02em;white-space:nowrap}
+.roast-line{display:none;font-size:13px;color:var(--silver);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;grid-column:2 / 4}
+html.roast-on .roast-line{display:block}
+.track{height:22px;background:#081029;border-radius:4px;position:relative;overflow:visible;margin-right:18px}
+.bar{height:100%;display:flex;border-radius:4px;overflow:hidden;width:0}
+.seg{height:100%}
+.s0{background:var(--blue)}.s1{background:var(--green)}.s2{background:var(--gold)}.s3{background:var(--pink)}
+.car{position:absolute;top:50%;transform:translate(-50%,-55%);font-size:20px;line-height:1;left:0;z-index:2;pointer-events:none;filter:drop-shadow(0 1px 1px #000)}
+.flag{position:absolute;right:-16px;top:50%;transform:translateY(-58%);font-size:18px;line-height:1;z-index:1}
+.xpv{font-family:var(--pixel);font-size:18px;text-align:right;font-variant-numeric:tabular-nums;color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:10px 4px 0;color:var(--dim);font-size:14px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+h2{font-family:var(--pixel);font-size:20px;letter-spacing:.08em;margin:34px 0 12px}
+.awards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.award{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:14px;opacity:0;transform:scale(.9);transition:opacity .5s, transform .5s}
+.award.show{opacity:1;transform:none}
+.award .t{font-family:var(--pixel);font-size:13px;color:var(--gold);letter-spacing:.06em}
+.award .n{font-weight:700;font-size:20px;margin:6px 0 2px;overflow-wrap:anywhere}
+.award .v{color:var(--dim);font-size:14px}
+.award img.badge{width:28px;height:28px;vertical-align:-6px;margin-right:4px}
+.formula{color:var(--dim);font-size:14px;margin-top:22px;line-height:1.5}
+.drawer{position:fixed;inset:0 0 0 auto;width:min(380px,100%);background:#0a1330;border-left:2px solid var(--line);padding:20px;overflow:auto;z-index:20;transform:translateX(100%);transition:transform .3s}
+.drawer.open{transform:none}
+.drawer h3{font-family:var(--pixel);font-size:16px;margin:0 0 14px}
+.field{display:grid;gap:6px;margin-bottom:14px;font-size:14px;color:var(--dim)}
+select,input[type=number]{font:inherit;background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:6px;padding:8px}
+.weights{display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center}
+.note{font-size:13px;color:var(--dim);line-height:1.45}
+#status{color:var(--green);font-size:13px;min-height:1.2em}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
+/* Loot splash */
+#loot{position:fixed;inset:0;z-index:40;background:radial-gradient(circle at 50% 55%,#0d1f55 0%,#012255 35%,#060B1D 75%);display:none;place-items:center;text-align:center;color:#fff;transition:opacity .4s}
+#loot.on{display:grid}#loot.bye{opacity:0}
+#loot .lk{position:absolute;top:8vh;width:100%;font-family:var(--pixel);font-size:clamp(18px,3vw,34px);color:var(--silver);letter-spacing:.18em}
+#loot .rays{position:absolute;left:50%;top:55%;width:1800px;height:1800px;margin:-900px 0 0 -900px;border-radius:50%;opacity:0;
+  background:repeating-conic-gradient(rgba(255,210,63,.16) 0 8deg, transparent 8deg 16deg);transform:scale(.6)}
+#loot.open .rays{opacity:1;transform:scale(1);animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg) scale(1)}}
+@keyframes shake{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+@keyframes pulse{from{opacity:.5}to{opacity:1}}
+@keyframes flick{from{transform:scale(1)}to{transform:scale(1.08)}}
+#chest{position:relative;width:260px;height:210px;margin-top:8vh;transition:transform .5s,opacity .5s}
+#chest .lid{position:absolute;left:0;top:0;width:260px;height:74px;background:linear-gradient(#b8642a,#7a3a12);border:8px solid var(--gold);border-radius:40px 40px 8px 8px;transform-origin:12px 74px;transition:transform .5s}
+#chest .box{position:absolute;left:0;top:68px;width:260px;height:140px;background:linear-gradient(#9a4e1c,#5c2a0c);border:8px solid var(--gold);border-radius:8px}
+#chest .box:before{content:"";position:absolute;left:110px;top:-8px;width:28px;height:36px;background:var(--gold);border-radius:4px}
+#chest .glow{position:absolute;left:20px;top:50px;width:220px;height:40px;border-radius:50%;background:#FFD23F;filter:blur(22px);opacity:0;transition:opacity .4s}
+#chest.shake{animation:shake .12s linear infinite}
+#chest.glowing .glow{opacity:1;animation:pulse .3s ease-in-out infinite alternate}
+#chest.opened .lid{transform:rotate(-42deg)}#chest.opened .glow{opacity:1}
+#chest.gone{transform:scale(.4) translateY(240px);opacity:0}
+#lcard{position:absolute;left:50%;top:50%;width:min(920px,90vw);margin-left:calc(min(920px,90vw) / -2);transform:translateY(-50%) scale(.3) rotate(-6deg);opacity:0;background:linear-gradient(#15285a,#0c1530);border:4px solid var(--gold);border-radius:18px;padding:28px 24px;transition:transform .45s,opacity .4s}
+#lcard.in{opacity:1;transform:translateY(-50%) scale(1) rotate(0)}#lcard.out{opacity:0;transform:translateY(-50%) scale(1.2)}
+#lcard .rk{font-family:var(--pixel);font-size:18px;color:#FF8A3D;letter-spacing:.16em}
+#lcard .fire{font-size:72px;line-height:1.1;animation:flick .4s ease-in-out infinite alternate}
+#lcard .nm{font-family:var(--pixel);font-size:clamp(48px,8vw,96px);color:var(--gold);text-shadow:0 0 30px rgba(255,140,40,.8);line-height:1.05}
+#lcard .sub{font-family:var(--pixel);font-size:18px;color:var(--silver);margin:6px 0 18px}
+#lcard .stats{display:flex;justify-content:center;gap:24px;font-family:var(--pixel)}
+#lcard .stats div{background:#060B1D;border:3px solid var(--line);border-radius:12px;padding:10px 22px;font-size:32px;color:#fff}
+#lcard .stats small{display:block;font-size:13px;color:var(--dim)}
+#lcard .tag{font-size:20px;color:var(--ink);margin-top:18px;font-weight:700}
+#lfin{font-family:var(--pixel);font-size:clamp(48px,8vw,96px);color:var(--gold);text-shadow:0 0 40px #FF4F8B;opacity:0;transform:scale(.3);transition:transform .5s,opacity .4s}
+#lfin.in{opacity:1;transform:scale(1)}
+@media (max-width:640px){.row{grid-template-columns:36px minmax(0,1fr) 70px;}.track{display:none}.podium{min-height:190px}.p1 .block{height:120px}.p2 .block{height:90px}.p3 .block{height:70px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* Wide screens (16:9 classroom TVs): title, medal stand, class stats and awards stay fixed on the left;
+   the long list sits on the right, and scrolling the page moves only the list. */
+@media (min-width:1100px) and (min-aspect-ratio:4/3){
+  .wrap{max-width:none;width:auto;margin:0;display:grid;grid-template-columns:minmax(0,42fr) minmax(0,58fr);
+    gap:clamp(20px,2vw,44px);align-items:start;padding:0 clamp(20px,2vw,44px)}
+  .side{position:sticky;top:0;height:100vh;overflow:hidden;padding:clamp(14px,2.6vh,30px) 0;display:flex;flex-direction:column;gap:clamp(8px,1.4vh,16px)}
+  .side > *{margin-top:0;margin-bottom:0;flex-shrink:0}
+  .main{padding:clamp(14px,2.6vh,30px) 0 90px;min-width:0}
+  header{flex-direction:column;align-items:flex-start;gap:12px}
+  h1{font-size:clamp(30px,3vw,64px)}
+  .podium{min-height:0}
+  .p1 .block{height:clamp(70px,14vh,170px)} .p2 .block{height:clamp(52px,10vh,125px)} .p3 .block{height:clamp(40px,7.5vh,95px)}
+  .awards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .legend{margin:12px 4px 0}
+}
+</style>
+<link rel="stylesheet" href="../moneyball/embed.css">
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap has-moneyball">
+<div class="side">
+<header>
+    <div>
+      <div class="brand"><img class="logo" src="../assets/stream-logo-letterforms.png" alt="STREAM">
+        <div class="eyebrow">DONOVAN CATHOLIC · COMPUTER SCIENCE II</div>
+      </div>
+      <h1>CS2 <span class="accent">HIGH SCORES</span></h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="controls">
+      <button class="primary" id="replay">▶ REPLAY</button>
+      <button id="full">FULLSCREEN</button>
+      <button id="gear" aria-expanded="false" aria-controls="drawer">SETTINGS</button>
+      <button id="roastbtn" type="button" aria-pressed="false" title="Roast mode: OFF. Ctrl+Shift+R">🌶️</button>
+      <div id="roastb">ROAST MODE</div>
+    </div>
+  </header>
+<div class="round" id="round" aria-live="polite"></div>
+<section class="podium" id="podium" aria-label="Top three"></section>
+<h2>CLASS AWARDS</h2>
+<section class="awards" id="awards"></section>
+<p class="formula" id="formula"></p>
+</div>
+<div class="main">
+<section class="board" id="board" aria-label="Leaderboard"></section>
+<div class="legend" id="legend"></div>
+</div>
+</div>
+<iframe
+  class="moneyball-frame"
+  src="../moneyball/moneyball-panel.html?class=CS2&layout=side"
+  title="CS2 MoneyBall opportunities"
+></iframe>
+
+<aside class="drawer" id="drawer" aria-label="Settings">
+  <h3>SETTINGS</h3>
+  <label class="field">Show
+    <select id="topN"><option value="5">Top 5</option><option value="10">Top 10</option><option value="999" selected>Whole class</option></select>
+  </label>
+  <label class="field">Names
+    <select id="nameStyle">
+      <option value="first" selected>First name</option>
+      <option value="initials">Initials only</option>
+      <option value="player">Player numbers (no names)</option>
+    </select>
+  </label>
+  <div class="field">XP per…
+    <div class="weights" id="weights"></div>
+  </div>
+  <p class="note">Roast mode (🌶️ or Ctrl+Shift+R) is off by default. It only shows upward, class-level asides — never a roast of a person.</p>
+  <p id="status"></p>
+  <button id="reset">Reset to Nov 16 data</button>
+  <button id="close" style="margin-left:8px">Close</button>
+</aside>
+
+<div id="loot" aria-live="polite">
+  <div class="rays"></div>
+  <div class="lk" id="lk">🔥 HOT STREAK DROP 🔥</div>
+  <div id="chest"><div class="glow"></div><div class="lid"></div><div class="box"></div></div>
+  <div id="lcard"></div>
+  <div id="lfin">LET'S RACE!</div>
+</div>
+
+<script>
+// First names only. shortName() keeps any later paste FERPA-safe.
+const shortName = n => { n = String(n).replace(/\s+/g,' ').trim(); const p = n.split(' '); return p[0]; };
+const EMOJI = {"Complete": "✅", "Curiosity": "🔍", "Competence": "🧠", "Confidence": "💪", "Courage": "🦁", "Collaborate": "🤝", "Coopertition": "🏁", "Compassion": "💛", "Conscience": "⚖️", "Communicate": "📣"};
+const KEYS = ["khan", "gain", "medals"];
+const ROUNDS = ["ITEMS COMPLETED", "THIS WEEK'S GAIN", "5C MEDALS"];
+const DEFAULT_W = [10, 2, 15];
+const WLABELS = ["item completed", "item gained this week", "5C medal"];
+const LEGEND = ["Items completed", "This week's gain", "5C medals"];
+const AWARDS = [{"title": "ITEMS CHAMPION", "key": "khan", "fmt": "{} items completed"}, {"title": "HOT STREAK", "key": "gain", "fmt": "{} items gained this week"}, {"title": "MEDAL MASTER", "key": "medals", "fmt": "{} of the 5C medals"}, {"title": "COURSE CLOSER", "key": "khan", "fmt": "{} items — finished the assigned set", "need": "completeAssigned"}];
+const SAMPLE = {
+  range: "Updated Mon Nov 16, 1:27 PM ET",
+  students: [{"name": "Benny", "khan": 30, "assigned": 67, "gain": 41, "medals": 4, "stickers": ["Curiosity", "Competence", "Confidence", "Courage"]}, {"name": "Cara", "khan": 42, "assigned": 78, "gain": 45, "medals": 3, "stickers": ["Curiosity", "Competence", "Courage"]}, {"name": "Emiliano", "khan": 23, "assigned": 68, "gain": 29, "medals": 3, "stickers": ["Curiosity", "Confidence", "Courage"]}, {"name": "Gabriel", "khan": 23, "assigned": 68, "gain": 26, "medals": 3, "stickers": ["Curiosity", "Competence", "Confidence"]}, {"name": "Genesis", "khan": 46, "assigned": 67, "gain": 37, "medals": 3, "stickers": ["Curiosity", "Competence", "Courage"]}, {"name": "Kaleb", "khan": 67, "assigned": 67, "gain": 95, "medals": 5, "stickers": ["Complete", "Curiosity", "Competence", "Confidence", "Courage"]}, {"name": "Kaylee", "khan": 25, "assigned": 70, "gain": 25, "medals": 1, "stickers": ["Curiosity"]}, {"name": "Mario", "khan": 37, "assigned": 69, "gain": 24, "medals": 2, "stickers": ["Curiosity", "Confidence"]}, {"name": "Mathew", "khan": 44, "assigned": 77, "gain": 25, "medals": 3, "stickers": ["Complete", "Curiosity", "Courage"]}, {"name": "Mathias", "khan": 18, "assigned": 75, "gain": 8, "medals": 2, "stickers": ["Curiosity", "Competence"]}, {"name": "Sara", "khan": 28, "assigned": 68, "gain": 20, "medals": 1, "stickers": ["Curiosity"]}, {"name": "Crystal", "khan": 8, "assigned": 32, "gain": 8, "medals": 3, "stickers": ["Complete", "Curiosity", "Competence"]}, {"name": "Kerry", "khan": 18, "assigned": 32, "gain": 18, "medals": 3, "stickers": ["Complete", "Curiosity", "Competence"]}],
+  loot: {"title": "🔥 CS2 HOT STREAK DROP 🔥", "latch": "tadah_loot_v24_cs2", "label": "CS2", "holdMs": 3500, "finale": "LET'S RACE!", "kids": [{"name": "Cara", "minutes": 203, "done": 33, "rank": "HOT STREAK #1", "tag": "203 min · 33 assignments completed. Khan snapshot: celebrate!", "vibe": "🔥❤️‍🔥"}, {"name": "Kaleb", "minutes": 222, "done": 31, "rank": "HOT STREAK #2", "tag": "222 min · 31 assignments completed. Khan snapshot: celebrate!", "vibe": "🔥❤️‍🔥"}, {"name": "Genesis", "minutes": 234, "done": 23, "rank": "HOT STREAK #3", "tag": "234 min · 23 assignments completed. Khan snapshot: celebrate!", "vibe": "🔥💪"}, {"name": "Kaylee", "minutes": 294, "done": 19, "rank": "HOT STREAK #4", "tag": "294 min · 19 assignments completed. Khan snapshot: celebrate!", "vibe": "🔥💪"}, {"name": "Kerry", "minutes": 178, "done": 18, "rank": "HOT STREAK #5", "tag": "178 min · 18 assignments completed. Khan snapshot: celebrate!", "vibe": "🔥"}]}
+};
+const ROW_H_BASE = 58, ROW_H_ROAST = 76, ROUND_MS = 2200;
+const $ = id => document.getElementById(id);
+const store = { get(k){ try{return JSON.parse(localStorage.getItem('cs2lb:'+k))}catch(e){return null} },
+                set(k,v){ try{localStorage.setItem('cs2lb:'+k, JSON.stringify(v))}catch(e){} } };
+let data = SAMPLE;
+let settings = Object.assign({topN:999, nameStyle:'first', w:DEFAULT_W.slice()}, store.get('settings') || {});
+if (!Array.isArray(settings.w) || settings.w.length !== DEFAULT_W.length) settings.w = DEFAULT_W.slice();
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let ROAST = false;
+const ROAST_LINES = [
+  'The lane is open. One more item moves the car.',
+  'Receipts are in. The board does not blink.',
+  'Medals are stickers you can see from the back row.',
+  'Hot streaks start with the next assignment.',
+  'Keep stacking. The flag is waiting.',
+  'Every completed item is a lap you can keep.'
+];
+const hash = s => { let h=0; for (const ch of String(s)) h = (h*31 + ch.charCodeAt(0))|0; return Math.abs(h); };
+
+function displayName(s, i){
+  const first = shortName(s.name);
+  switch(settings.nameStyle){
+    case 'initials': return first.slice(0,1).toUpperCase();
+    case 'player': return 'PLAYER ' + String(i+1).padStart(2,'0');
+    default: return first;
+  }
+}
+const comp = s => KEYS.map((k,i)=> (s[k]||0) * settings.w[i]);
+const total = s => comp(s).reduce((a,b)=>a+b,0);
+function stickerText(s){
+  return (s.stickers||[]).map(t => EMOJI[t] || '').join('');
+}
+function rowHeight(){ return ROAST ? ROW_H_ROAST : ROW_H_BASE; }
+
+let anim = null;
+function build(){
+  if (anim) cancelAnimationFrame(anim);
+  $('sub').textContent = 'CS2 · Khan Academy · ' + (data.range || '');
+  const all = data.students.map(s => ({...s, name: shortName(s.name), xp: total(s), parts: comp(s)}));
+  const ranked = [...all].sort((a,b)=> b.xp - a.xp || a.name.localeCompare(b.name));
+  ranked.forEach((s,i)=> s.label = displayName(s,i));
+  const shown = ranked.slice(0, Math.min(settings.topN, ranked.length));
+  const max = Math.max(1, ...shown.map(s=>s.xp));
+  const board = $('board'); board.innerHTML = '';
+  const H = rowHeight();
+  board.style.height = (shown.length * H + 20) + 'px';
+  const start = [...shown].sort((a,b)=> a.name.localeCompare(b.name));
+  start.forEach((s,i)=>{
+    const r = document.createElement('div'); r.className='row';
+    r.innerHTML = `<div class="rank"></div><div class="who"><div class="name"></div><div class="roast-line"></div></div><div class="track"><div class="bar">${KEYS.map((_,k)=>`<div class="seg s${k}"></div>`).join('')}</div><span class="car">🏎️</span><span class="flag">🏁</span></div><div class="xpv">0</div>`;
+    const nm = r.querySelector('.name');
+    nm.textContent = s.label;
+    const badge = document.createElement('span'); badge.className='badges'; badge.textContent = stickerText(s);
+    nm.appendChild(badge);
+    r.querySelector('.roast-line').textContent = ROAST_LINES[hash(s.name + 'cs2lb') % ROAST_LINES.length];
+    r.style.top = '10px'; r.style.transform = `translateY(${i*H}px)`;
+    board.appendChild(r); s.el = r;
+  });
+  $('legend').innerHTML = LEGEND.map((t,i)=> `<span><i class="s${i}"></i>${t}</span>`).join('');
+  $('podium').innerHTML = ''; $('awards').innerHTML='';
+  const bits = settings.w.map((w,i)=> `${w} per ${WLABELS[i]}`);
+  $('formula').textContent = 'XP = ' + bits.join(' + ') + '. Ties go alphabetical.';
+  run(shown, max, ranked);
+}
+
+function paint(shown, max, round, p){
+  const H = rowHeight();
+  const vals = shown.map(s=>{
+    const seg = s.parts.map((v,k)=> k<round ? v : k===round ? v*p : 0);
+    return {s, seg, v: seg.reduce((a,b)=>a+b,0)};
+  });
+  vals.sort((a,b)=> b.v - a.v || a.s.name.localeCompare(b.s.name));
+  vals.forEach((o,rank)=>{
+    const el = o.s.el;
+    el.style.transform = `translateY(${rank*H}px)`;
+    el.className = 'row' + (rank<3 && o.v>0 ? ' r'+(rank+1) : '');
+    el.querySelector('.rank').textContent = rank+1;
+    el.querySelector('.xpv').textContent = Math.round(o.v).toLocaleString();
+    const pct = (o.v/max*100);
+    el.querySelector('.bar').style.width = pct + '%';
+    el.querySelector('.car').style.left = pct + '%';
+    el.querySelectorAll('.seg').forEach((sg,k)=> sg.style.width = (o.v ? o.seg[k]/o.v*100 : 0) + '%');
+  });
+}
+
+function run(shown, max, ranked){
+  const t0 = performance.now();
+  const ease = x => 1 - Math.pow(1-x, 3);
+  if (reduce){ paint(shown,max,KEYS.length,1); $('round').innerHTML='FINAL SCORES'; finish(shown, ranked); return; }
+  function tick(now){
+    const el = now - t0, round = Math.floor(el/ROUND_MS), p = ease(Math.min(1,(el % ROUND_MS)/ROUND_MS));
+    if (round >= KEYS.length){ paint(shown,max,KEYS.length,1); $('round').innerHTML='FINAL SCORES'; finish(shown, ranked); return; }
+    $('round').innerHTML = `ROUND ${round+1}<span class="of"> / ${KEYS.length}</span> · ${ROUNDS[round]}`;
+    paint(shown, max, round, p);
+    anim = requestAnimationFrame(tick);
+  }
+  anim = requestAnimationFrame(tick);
+}
+
+function finish(shown, ranked){
+  const pod = $('podium');
+  ranked.slice(0,3).forEach((s,i)=>{
+    const d = document.createElement('div'); d.className = 'step p'+(i+1);
+    const trophy = i===0 ? '🏆 ' : i===1 ? '🥈 ' : '🥉 ';
+    d.innerHTML = `${i===0?'<div class="crown">🏆 CHAMPION</div>':(i===1?'<div class="crown">🥈 SILVER</div>':'<div class="crown">🥉 BRONZE</div>')}<div class="who"></div><div class="xp">${s.xp.toLocaleString()} XP</div><div class="block">${i+1}</div>`;
+    d.querySelector('.who').textContent = s.label;
+    pod.appendChild(d);
+    setTimeout(()=> d.classList.add('show'), reduce?0: [400,200,0][i]);
+  });
+  if (!reduce) setTimeout(confetti, 450);
+  const best = (key, filter=()=>true) => {
+    const c = ranked.filter(s=> filter(s) && (s[key]||0) > 0);
+    if (!c.length) return null;
+    return c.reduce((a,b)=> (b[key] > a[key] || (b[key]===a[key] && b.name.localeCompare(a.name)<0)) ? b : a);
+  };
+  AWARDS.forEach((A,i)=>{
+    const w = best(A.key, s => {
+      if (A.need === 'completeAssigned') return (s.assigned||0) > 0 && (s.khan||0) >= s.assigned;
+      if (A.need) return (s[A.need]||0) >= (A.needMin||1);
+      return true;
+    });
+    if(!w) return;
+    const c = document.createElement('div'); c.className='award';
+    const val = A.fmt.replace('{}', String(w[A.key]));
+    c.innerHTML = `<div class="t">${A.title}</div><div class="n"></div><div class="v"></div>`;
+    c.querySelector('.n').textContent = w.label;
+    c.querySelector('.v').textContent = val;
+    $('awards').appendChild(c);
+    setTimeout(()=>c.classList.add('show'), reduce?0:700+i*180);
+  });
+  if (!reduce) setTimeout(()=> { lootOnce(); }, 900);
+}
+
+const cv = $('fx'), cx = cv.getContext('2d'); let parts=[];
+function confetti(){
+  cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ['#ffd23f','#c9d3e8','#ffffff','#3f8cff','#4cf0a0'];
+  for(let i=0;i<180;i++) parts.push({x:innerWidth/2+(Math.random()-.5)*300,y:innerHeight*.35,vx:(Math.random()-.5)*14,vy:-Math.random()*14-4,
+    s:Math.random()*8+4,c:cols[i%5],r:Math.random()*6,vr:(Math.random()-.5)*.4,life:0});
+  let n=0;(function f(){cx.clearRect(0,0,cv.width,cv.height);parts.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.life++;
+    cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);cx.restore();});
+    parts=parts.filter(p=>p.y<cv.height+40&&p.life<240); if(parts.length&&n++<400) requestAnimationFrame(f); else cx.clearRect(0,0,cv.width,cv.height);})();
+}
+
+function lootWanted(){
+  const L = data.loot;
+  if (!L || !L.kids || !L.kids.length) return false;
+  if (window.parent !== window) return false;
+  const h = location.hash || '';
+  if (/nolootsplash/.test(h) || /shot/.test(h)) return false;
+  if (/#loot\b/.test(h) || /#loot$/.test(h)) return true;
+  try { if (sessionStorage.getItem(L.latch)) return false; } catch(e){}
+  return true;
+}
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+async function runLootSplash(){
+  if (!lootWanted()) return;
+  const L = data.loot;
+  try { sessionStorage.setItem(L.latch, '1'); } catch(e){}
+  const lo = $('loot'), ch = $('chest'), cd = $('lcard'), fin = $('lfin');
+  $('lk').textContent = L.title;
+  fin.textContent = L.finale || "LET'S RACE!";
+  lo.classList.add('on');
+  await sleep(reduce ? 0 : 300);
+  lo.classList.add('open'); ch.classList.add('shake','glowing');
+  await sleep(reduce ? 0 : 700);
+  ch.classList.remove('shake'); ch.classList.add('opened');
+  await sleep(reduce ? 0 : 400);
+  ch.classList.add('gone');
+  const hold = Math.max(700, Math.min(L.holdMs||1400, 1600));
+  for (let i=0;i<L.kids.length;i++){
+    const k = L.kids[i];
+    const mins = k.minutes != null ? `<div>${k.minutes}<small>MINUTES</small></div>` : '';
+    const done = k.done != null ? `<div>${k.done}<small>COMPLETED</small></div>` : '';
+    cd.innerHTML = `<div class="rk"></div><div class="fire"></div><div class="nm"></div><div class="sub"></div><div class="stats">${mins}${done}</div><div class="tag"></div>`;
+    cd.querySelector('.rk').textContent = k.rank || ('HOT STREAK #' + (i+1));
+    cd.querySelector('.fire').textContent = k.vibe || '🔥';
+    cd.querySelector('.nm').textContent = shortName(k.name);
+    cd.querySelector('.sub').textContent = (L.label || '') + ' · ON FIRE';
+    cd.querySelector('.tag').textContent = k.tag || '';
+    cd.classList.remove('out'); cd.classList.add('in');
+    await sleep(reduce ? 400 : hold);
+    cd.classList.remove('in'); cd.classList.add('out');
+    await sleep(reduce ? 0 : 250);
+  }
+  fin.classList.add('in');
+  await sleep(reduce ? 400 : 1100);
+  lo.classList.add('bye');
+  await sleep(reduce ? 0 : 400);
+  lo.classList.remove('on','open','bye');
+  ch.className = '';
+  cd.className = '';
+  fin.classList.remove('in');
+}
+let lootP = null;
+function lootOnce(){ return lootP || (lootP = runLootSplash().catch(e => console.warn('loot', e))); }
+
+function setRoast(v){
+  ROAST = !!v;
+  const b = $('roastbtn');
+  if (b){
+    b.textContent = ROAST ? '🐑' : '🌶️';
+    b.title = ROAST ? 'Roast mode: ON. Ctrl+Shift+R to turn off' : 'Roast mode: OFF. Ctrl+Shift+R';
+    b.setAttribute('aria-pressed', ROAST ? 'true' : 'false');
+    b.setAttribute('aria-label', ROAST ? 'Turn off roast mode' : 'Turn on roast mode');
+  }
+  document.documentElement.classList.toggle('roast-on', ROAST);
+  const board = $('board');
+  if (board && board.children.length){
+    const H = rowHeight();
+    board.style.height = (board.children.length * H + 20) + 'px';
+    // re-stack current visual order by current transform ranks? keep paint positions: read rank text
+    const rows = [...board.querySelectorAll('.row')];
+    rows.sort((a,b)=> (+a.querySelector('.rank').textContent) - (+b.querySelector('.rank').textContent));
+    rows.forEach((r,i)=> r.style.transform = `translateY(${i*H}px)`);
+  }
+}
+
+function syncInputs(){
+  $('topN').value = settings.topN;
+  $('nameStyle').value = settings.nameStyle;
+  const box = $('weights'); box.innerHTML = '';
+  WLABELS.forEach((lab,i)=>{
+    const span = document.createElement('span'); span.textContent = lab;
+    const inp = document.createElement('input'); inp.type='number'; inp.min='0'; inp.step='1'; inp.value=settings.w[i]; inp.id='w'+i;
+    inp.onchange = e=>{ settings.w[i]=Math.max(0,+e.target.value||0); saveSettings(); };
+    box.appendChild(span); box.appendChild(inp);
+  });
+}
+function saveSettings(){ store.set('settings', settings); build(); lootP = null; }
+$('topN').onchange = e=>{ settings.topN=+e.target.value; saveSettings(); };
+$('nameStyle').onchange = e=>{ settings.nameStyle=e.target.value; saveSettings(); };
+$('reset').onclick = ()=>{ data=SAMPLE; store.set('data',null); store.set('settings',null); settings = {topN:999, nameStyle:'first', w:DEFAULT_W.slice()}; syncInputs(); $('status').textContent='Back to the Nov 16 data.'; lootP=null; build(); };
+$('replay').onclick = ()=>{ lootP=null; try{ if (data.loot) sessionStorage.removeItem(data.loot.latch); }catch(e){} build(); };
+$('gear').onclick = ()=>{ const o=$('drawer').classList.toggle('open'); $('gear').setAttribute('aria-expanded',o); };
+$('close').onclick = ()=>{ $('drawer').classList.remove('open'); $('gear').setAttribute('aria-expanded','false'); };
+$('full').onclick = ()=>{ const d=document.documentElement; (document.fullscreenElement? document.exitFullscreen(): d.requestFullscreen?.())?.catch?.(()=>{}); };
+$('roastbtn').onclick = e=>{ e.stopPropagation(); setRoast(!ROAST); e.currentTarget.blur(); };
+addEventListener('keydown', e=>{
+  if (e.code==='KeyR' && ((e.ctrlKey && e.shiftKey) || e.altKey)){ e.preventDefault(); e.stopPropagation(); setRoast(!ROAST); }
+});
+if (/roast/.test(location.hash||'')) setTimeout(()=> setRoast(true), 50);
+syncInputs(); setRoast(false); build();
+</script>
+<script src="../fit-side.js"></script>
+<script src="../tour-agent.js"></script>
+</body>
+</html>
