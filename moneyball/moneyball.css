@@ -770,3 +770,347 @@ body.sign .track { height: calc(100% - 0px); }
   mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 48px), transparent 100%);
   -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 48px), transparent 100%);
 }
+
+
+/* ===== Money flair: emoji accents + background coins/bills ===== */
+.emo {
+  font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", "Twemoji Mozilla", "Segoe UI Symbol", sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-variant-emoji: emoji;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+  speak: never;
+  padding: 0 0.06em;
+}
+.wordmark {
+  white-space: nowrap;
+}
+.wordmark .emo {
+  font-size: 0.42em;
+  vertical-align: 0.22em;
+  margin-left: 0.06em;
+}
+/* The 16:9 sign's brand column is too tight for a trailing 💰 — it wrapped into the hero. */
+body.sign .wordmark .emo { display: none; }
+.purse-kicker .emo,
+.atbat-kicker .emo {
+  font-size: 1em;
+  margin-right: 0.12em;
+}
+.today-banner .emo { font-size: 0.86em; }
+.award .emo,
+.atbat-award .emo,
+.rides .emo {
+  font-size: 0.92em;
+  margin-right: 0.12em;
+}
+
+/* Flair sits behind every typographic surface. Cards/hero already have opaque fills,
+   so coins only show in the navy gaps — never over text or QR codes. */
+#flair {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(180deg, transparent 0 70px, rgba(0,0,0,.35) 110px, #000 160px, #000 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0 70px, rgba(0,0,0,.35) 110px, #000 160px, #000 100%);
+}
+#stage > .hdr,
+#stage > .hero,
+#stage > .timeline,
+#stage > .board,
+#stage > .foot {
+  position: relative;
+  z-index: 2;
+}
+#stage > .led { z-index: 8; }
+
+.hdr { position: relative; }
+.hdr-flair {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.hdr .brand,
+.hdr .hdr-mid,
+.hdr .hdr-clock {
+  position: relative;
+  z-index: 1;
+}
+
+.mb-coin {
+  position: absolute;
+  left: var(--x, 0);
+  top: var(--y, 0);
+  width: var(--size, 28px);
+  height: var(--size, 28px);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, #fff6a8 0%, #ffe94d 40%, #e8c547 68%, #b8891a 100%);
+  box-shadow:
+    inset 0 0 0 2px #f7e27a,
+    inset 0 0 0 4px #c9951c,
+    0 1px 3px rgba(0, 0, 0, .3);
+  display: grid;
+  place-items: center;
+  opacity: 0.2;
+  will-change: transform;
+  transform-origin: center center;
+}
+.mb-coin span {
+  font-family: "Bebas Neue", "Georgia", serif;
+  font-size: calc(var(--size, 28px) * 0.55);
+  line-height: 1;
+  color: #7a5a10;
+  font-weight: 400;
+  transform: translateY(4%);
+}
+.mb-coin.star span { font-size: calc(var(--size, 28px) * 0.48); color: #8a6412; }
+
+.mb-bill {
+  position: absolute;
+  left: var(--x, 0);
+  top: var(--y, 0);
+  width: 56px;
+  height: 26px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #c8edd0 0%, #5aaa6f 45%, #2f7a48 100%);
+  box-shadow:
+    inset 0 0 0 2px #d9f3df,
+    inset 0 0 0 4px #3d8f55,
+    0 1px 3px rgba(0, 0, 0, .28);
+  opacity: 0.18;
+  display: grid;
+  place-items: center;
+  will-change: transform;
+  transform: rotate(var(--rot, -8deg));
+}
+.mb-bill span {
+  font-family: "Bebas Neue", "Georgia", serif;
+  font-size: 16px;
+  color: #1d4d2c;
+  line-height: 1;
+}
+.mb-bill::before {
+  content: "";
+  position: absolute;
+  inset: 6px 8px;
+  border: 1px dashed rgba(29, 77, 44, .45);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+#flair .mb-coin.fall {
+  animation: mb-coin-fall var(--d, 30s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+#flair .mb-coin.spin,
+.hdr-flair .mb-coin.idle {
+  animation: mb-coin-idle var(--d, 10s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+#flair .mb-bill {
+  animation: mb-bill-drift var(--d, 34s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes mb-coin-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  100% { transform: translate3d(var(--dx, 24px), 1180px, 0) rotate(360deg); }
+}
+@keyframes mb-bill-drift {
+  0% { transform: translate3d(0, 0, 0) rotate(var(--rot, -8deg)); }
+  100% { transform: translate3d(var(--dx, 40px), 1180px, 0) rotate(calc(var(--rot, -8deg) + 24deg)); }
+}
+@keyframes mb-coin-idle {
+  0%, 100% { transform: translateY(0) rotate(-10deg); }
+  50% { transform: translateY(5px) rotate(10deg); }
+}
+
+/* Brief burst from the purse / hero gap — still in the behind-content flair layer. */
+.burst-layer { position: absolute; inset: 0; pointer-events: none; }
+.mb-coin.burst {
+  opacity: 0;
+  animation: mb-coin-burst .95s ease-out forwards;
+}
+@keyframes mb-coin-burst {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.35) rotate(0deg); }
+  18% { opacity: 0.55; }
+  100% { opacity: 0; transform: translate(var(--dx, 40px), var(--dy, -40px)) scale(1) rotate(var(--rot, 120deg)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #flair .mb-coin,
+  #flair .mb-bill,
+  .hdr-flair .mb-coin,
+  .mb-coin.burst {
+    animation: none !important;
+  }
+  .mb-coin.burst { display: none; }
+  .bling-marquee,
+  .bling-sparkle,
+  .award-text.shimmer,
+  .purse-amt.shimmer {
+    animation: none !important;
+  }
+  .award-text.shimmer,
+  .purse-amt.shimmer {
+    -webkit-text-fill-color: #ffe94d;
+    background-image: none;
+    color: #ffe94d;
+  }
+  .bling-sparkle { opacity: 0; }
+}
+
+
+/* ===== High-roller / jackpot bling (casino, kept classy) ===== */
+.bling-marquee {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 4;
+  padding: 4px;
+  --gap: 14px;
+  background-image:
+    radial-gradient(circle closest-side, #ffe94d 55%, rgba(255,233,77,.2) 64%, transparent 70%),
+    radial-gradient(circle closest-side, #ffe94d 55%, rgba(255,233,77,.2) 64%, transparent 70%),
+    radial-gradient(circle closest-side, #ffe94d 55%, rgba(255,233,77,.2) 64%, transparent 70%),
+    radial-gradient(circle closest-side, #ffe94d 55%, rgba(255,233,77,.2) 64%, transparent 70%);
+  background-size: var(--gap) 6px, 6px var(--gap), var(--gap) 6px, 6px var(--gap);
+  background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
+  background-position: 0 1px, 1px 0, 7px calc(100% - 1px), calc(100% - 1px) 7px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: bling-chase 1.1s linear infinite;
+}
+.card.tier-jackpot .bling-marquee,
+.bling-purse .bling-marquee {
+  --gap: 12px;
+  background-image:
+    radial-gradient(circle closest-side, #fff6a8 40%, #ffe94d 58%, transparent 70%),
+    radial-gradient(circle closest-side, #fff6a8 40%, #ffe94d 58%, transparent 70%),
+    radial-gradient(circle closest-side, #fff6a8 40%, #ffe94d 58%, transparent 70%),
+    radial-gradient(circle closest-side, #fff6a8 40%, #ffe94d 58%, transparent 70%);
+  animation-duration: 0.95s;
+}
+@keyframes bling-chase {
+  to {
+    background-position:
+      var(--gap) 1px,
+      1px var(--gap),
+      calc(7px - var(--gap)) calc(100% - 1px),
+      calc(100% - 1px) calc(7px - var(--gap));
+  }
+}
+
+.card.tier-high-roller,
+.card.tier-jackpot {
+  box-shadow: inset 0 0 0 1px rgba(255, 233, 77, .18);
+}
+.card.tier-jackpot {
+  background-image: linear-gradient(165deg, rgba(255,233,77,.09) 0%, transparent 38%);
+}
+
+.bling-sparkle {
+  position: absolute;
+  top: 14px;
+  left: 22px;
+  width: 11px;
+  height: 11px;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    linear-gradient(#fffce8, #fffce8) center / 2px 100% no-repeat,
+    linear-gradient(#fffce8, #fffce8) center / 100% 2px no-repeat;
+  filter: drop-shadow(0 0 3px rgba(255, 233, 77, .9));
+  opacity: 0;
+  animation: bling-glint 3.8s ease-in-out 0.6s infinite;
+}
+.bling-sparkle::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background:
+    linear-gradient(#ffe94d, #ffe94d) center / 1px 100% no-repeat,
+    linear-gradient(#ffe94d, #ffe94d) center / 100% 1px no-repeat;
+  transform: rotate(45deg);
+}
+.card.tier-jackpot .bling-sparkle { animation-duration: 3.2s; }
+@keyframes bling-glint {
+  0%, 72%, 100% { opacity: 0; transform: scale(0.35) rotate(0deg); }
+  78% { opacity: 0.95; transform: scale(1) rotate(18deg); }
+  90% { opacity: 0; transform: scale(0.4) rotate(36deg); }
+}
+
+.award-text.shimmer,
+.bling-purse .purse-amt.shimmer {
+  background-image: linear-gradient(
+    105deg,
+    #ffe94d 0 36%,
+    #fffce8 48%,
+    #ffe94d 58% 100%
+  );
+  background-size: 220% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #ffe94d;
+  animation: shimmer-sweep 4.2s ease-in-out infinite;
+}
+.card.tier-jackpot .award-text.shimmer {
+  background-image: linear-gradient(
+    105deg,
+    #ffe94d 0 34%,
+    #ffffff 48%,
+    #ffe94d 60% 100%
+  );
+  animation-duration: 3.6s;
+}
+@keyframes shimmer-sweep {
+  0%, 12% { background-position: 100% 0; }
+  55%, 100% { background-position: -20% 0; }
+}
+
+/* One-time count-up of the headline award figure (sign only). */
+.slot-num {
+  display: inline;
+  font-variant-numeric: tabular-nums;
+}
+.slot-num.rolling { letter-spacing: 0; }
+
+/* Panels: shimmer only — no chasing lights, sparkles, or reels. */
+body.panel .bling-marquee,
+body.panel .bling-sparkle { display: none; }
+
+/* Keep purse text above the bulb ring. */
+.bling-purse > :not(.bling-marquee) { position: relative; z-index: 1; }
+
+/* reduced-motion: bling overrides (must follow shimmer rules) */
+@media (prefers-reduced-motion: reduce) {
+  .bling-marquee,
+  .bling-sparkle,
+  .award-text.shimmer,
+  .bling-purse .purse-amt.shimmer {
+    animation: none !important;
+  }
+  .award-text.shimmer,
+  .bling-purse .purse-amt.shimmer {
+    -webkit-text-fill-color: #ffe94d;
+    background-image: none;
+    color: #ffe94d;
+  }
+  .bling-sparkle { opacity: 0; }
+}

@@ -584,16 +584,221 @@
     return bits.join("");
   }
 
+
+  function awardFlair(item) {
+    const award = (item && item.award) || "";
+    if (/full ride/i.test(award)) return "🏆";
+    if ((item && typeof item.award_usd === "number" && isFinite(item.award_usd)) || /\$/.test(award)) return "💵";
+    return "🪙";
+  }
+
+  function awardTier(item) {
+    if (!item) return "";
+    if (/full ride/i.test(item.award || "")) return "jackpot";
+    if (typeof item.award_usd === "number" && isFinite(item.award_usd) && item.award_usd >= 25000) {
+      return "high-roller";
+    }
+    return "";
+  }
+
+  function wrapAwardNumbers(text) {
+    const re = /\$(\d{1,3}(?:,\d{3})+)/g;
+    let m, maxVal = -1, maxRaw = null, maxNum = null;
+    while ((m = re.exec(text))) {
+      const v = parseInt(m[1].replace(/,/g, ""), 10);
+      if (v > maxVal) {
+        maxVal = v;
+        maxRaw = m[0];
+        maxNum = m[1];
+      }
+    }
+    if (!maxRaw) return escapeHtml(text);
+    const idx = text.indexOf(maxRaw);
+    return escapeHtml(text.slice(0, idx + 1)) +
+      '<span class="slot-num" data-target="' + maxVal + '" data-display="' + escapeHtml(maxNum) + '">' +
+      escapeHtml(maxNum) + "</span>" +
+      escapeHtml(text.slice(idx + maxRaw.length));
+  }
+
+  function awardHtml(item, extra) {
+    const icon = awardFlair(item);
+    const text = (item && item.award) || "";
+    const more = extra ? " · " + escapeHtml(extra) : "";
+    const tier = awardTier(item);
+    const body = tier ? wrapAwardNumbers(text) : escapeHtml(text);
+    return '<span class="emo" aria-hidden="true">' + icon + "</span> " +
+      '<span class="award-text' + (tier ? " shimmer" : "") + '">' + body + "</span>" + more;
+  }
+
+  function startSlotRolls(root) {
+    /* One-time count-up of the headline figure. Plain text (no digit strips) so
+       it stays readable with the shimmer and never changes the card's layout. */
+    if (!root || prefersReducedMotion()) return;
+    if (!document.body.classList.contains("sign")) return;
+    Array.prototype.forEach.call(root.querySelectorAll(".slot-num"), function (el) {
+      if (el.getAttribute("data-rolled") === "1") return;
+      const display = el.getAttribute("data-display") || el.textContent.trim();
+      const target = parseInt(el.getAttribute("data-target"), 10);
+      if (!display || !isFinite(target)) return;
+      el.setAttribute("data-rolled", "1");
+      el.setAttribute("aria-label", display);
+      const t0 = performance.now();
+      const dur = 900;
+      el.classList.add("rolling");
+      function frame(now) {
+        const p = Math.min(1, (now - t0) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toLocaleString("en-US");
+        if (p < 1) requestAnimationFrame(frame);
+        else {
+          el.textContent = display;
+          el.classList.remove("rolling");
+        }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function flairCoin(cls, style, face) {
+    return '<div class="mb-coin ' + cls + '" style="' + style + '"><span>' + face + "</span></div>";
+  }
+
+  function flairBill(style) {
+    return '<div class="mb-bill" style="' + style + '"><span>$</span></div>';
+  }
+
+  function headerFlairMarkup(layout) {
+    /* A few coins tucked in the header only — panel-safe, not over the wordmark. */
+    const coins = layout === "strip"
+      ? [
+          flairCoin("idle", "--x:72%;--y:4px;--size:18px;--d:9s;--delay:-2s;", "$"),
+          flairCoin("idle star", "--x:88%;--y:8px;--size:14px;--d:11s;--delay:-5s;", "★"),
+          flairCoin("idle", "--x:64%;--y:10px;--size:13px;--d:10s;--delay:-1s;", "$")
+        ]
+      : layout === "sign"
+      ? [
+          flairCoin("idle", "--x:78%;--y:12px;--size:22px;--d:10s;--delay:-2s;", "$"),
+          flairCoin("idle star", "--x:93%;--y:8px;--size:16px;--d:12s;--delay:-6s;", "★"),
+          flairCoin("idle", "--x:86%;--y:46px;--size:14px;--d:9s;--delay:-3s;", "$")
+        ]
+      : [
+          flairCoin("idle", "--x:78%;--y:18px;--size:26px;--d:10s;--delay:-2s;", "$"),
+          flairCoin("idle star", "--x:90%;--y:8px;--size:18px;--d:12s;--delay:-6s;", "★"),
+          flairCoin("idle", "--x:84%;--y:42px;--size:16px;--d:9s;--delay:-3s;", "$")
+        ];
+    return coins.join("");
+  }
+
+  function signFlairMarkup() {
+    const coins = [
+      ["fall", "--x:6%;--y:-8%;--size:40px;--d:28s;--delay:-8s;--dx:30px;", "$"],
+      ["fall star", "--x:18%;--y:-20%;--size:26px;--d:34s;--delay:-18s;--dx:-24px;", "★"],
+      ["fall", "--x:28%;--y:-5%;--size:32px;--d:26s;--delay:-4s;--dx:18px;", "$"],
+      ["fall star", "--x:42%;--y:-16%;--size:22px;--d:38s;--delay:-22s;--dx:-12px;", "★"],
+      ["fall", "--x:58%;--y:-10%;--size:36px;--d:30s;--delay:-12s;--dx:22px;", "$"],
+      ["fall", "--x:72%;--y:-18%;--size:28px;--d:32s;--delay:-20s;--dx:-28px;", "$"],
+      ["fall star", "--x:86%;--y:-6%;--size:34px;--d:27s;--delay:-9s;--dx:16px;", "★"],
+      ["fall", "--x:93%;--y:-22%;--size:24px;--d:36s;--delay:-15s;--dx:-20px;", "$"],
+      ["fall", "--x:10%;--y:-30%;--size:20px;--d:40s;--delay:-26s;--dx:10px;", "$"],
+      ["fall star", "--x:50%;--y:-28%;--size:30px;--d:33s;--delay:-11s;--dx:-18px;", "★"],
+      ["fall", "--x:78%;--y:-34%;--size:22px;--d:29s;--delay:-7s;--dx:26px;", "$"],
+      ["spin", "--x:4%;--y:62%;--size:28px;--d:14s;--delay:-3s;", "$"]
+    ];
+    const bills = [
+      "--x:12%;--y:-12%;--d:32s;--delay:-6s;--dx:50px;--rot:18deg;",
+      "--x:36%;--y:-24%;--d:38s;--delay:-16s;--dx:-40px;--rot:-14deg;",
+      "--x:64%;--y:-8%;--d:30s;--delay:-10s;--dx:36px;--rot:10deg;",
+      "--x:88%;--y:-20%;--d:36s;--delay:-22s;--dx:-30px;--rot:-16deg;",
+      "--x:48%;--y:-32%;--d:42s;--delay:-28s;--dx:24px;--rot:8deg;"
+    ];
+    return coins.map(function (c) {
+      return flairCoin(c[0], c[1], c[2]);
+    }).join("") + bills.map(function (s) {
+      return flairBill(s);
+    }).join("") + '<div class="burst-layer"></div>';
+  }
+
+  function burstCoins(layer) {
+    if (!layer || prefersReducedMotion()) return;
+    const burst = layer.querySelector(".burst-layer");
+    if (!burst) return;
+    burst.innerHTML = "";
+    const n = 10;
+    for (let i = 0; i < n; i++) {
+      const ang = (Math.PI * 2 * i) / n + 0.3;
+      const dist = 80 + (i % 3) * 36;
+      const dx = Math.round(Math.cos(ang) * dist);
+      const dy = Math.round(Math.sin(ang) * dist - 20);
+      const el = document.createElement("div");
+      el.className = "mb-coin burst" + (i % 2 ? " star" : "");
+      el.style.setProperty("--dx", dx + "px");
+      el.style.setProperty("--dy", dy + "px");
+      el.style.setProperty("--rot", (i % 2 ? 160 : -160) + "deg");
+      el.style.left = "72%";
+      el.style.top = "28%";
+      el.style.setProperty("--size", (16 + (i % 4) * 4) + "px");
+      el.innerHTML = "<span>" + (i % 2 ? "★" : "$") + "</span>";
+      burst.appendChild(el);
+    }
+    /* Clear after the animation so later bursts can replay */
+    setTimeout(function () { burst.innerHTML = ""; }, 1200);
+  }
+
+  function startFlair() {
+    const stage = document.getElementById("stage");
+    if (!stage) return;
+    const isSign = document.body.classList.contains("sign");
+    const layout = document.body.getAttribute("data-layout") || "side";
+
+    const old = stage.querySelector("#flair");
+    if (old) old.remove();
+
+    if (isSign) {
+      const layer = document.createElement("div");
+      layer.id = "flair";
+      layer.setAttribute("aria-hidden", "true");
+      layer.innerHTML = signFlairMarkup();
+      stage.insertBefore(layer, stage.firstChild);
+      if (!prefersReducedMotion()) {
+        /* A brief sparkle as the hero comes on, then once a minute. */
+        setTimeout(function () { burstCoins(layer); }, 600);
+        if (startFlair._timer) clearInterval(startFlair._timer);
+        startFlair._timer = setInterval(function () { burstCoins(layer); }, 60000);
+        startFlair._hero = (stage.querySelector(".atbat h2") || {}).textContent || "";
+      }
+    }
+
+    const hdr = stage.querySelector(".hdr");
+    if (hdr) {
+      const hf = document.createElement("div");
+      hf.className = "hdr-flair";
+      hf.setAttribute("aria-hidden", "true");
+      hf.innerHTML = headerFlairMarkup(isSign ? "sign" : layout);
+      hdr.insertBefore(hf, hdr.firstChild);
+    }
+  }
+
   function cardHtml(item, now, compact) {
     const urg = urgency(item, now);
     const info = flagInfo(item);
     const due = formatDeadline(item, now);
     const award = item.award || "";
+    const tier = awardTier(item);
     const flagNote = info.note
       ? '<div class="flag-note" title="' + escapeHtml(info.note) + '">' + escapeHtml(info.note) + "</div>"
       : "";
+    const bling = tier
+      ? '<div class="bling-marquee" aria-hidden="true"></div><span class="bling-sparkle" aria-hidden="true"></span>'
+      : "";
     return (
-      '<article class="card urg-' + urg + '" data-name="' + escapeHtml(item.name) + '" data-urg="' + urg + '">' +
+      '<article class="card urg-' + urg + (tier ? " tier-" + tier : "") +
+        '" data-name="' + escapeHtml(item.name) + '" data-urg="' + urg +
+        '"' + (tier ? ' data-tier="' + tier + '"' : "") + ">" +
+        bling +
         '<div class="card-accent"></div>' +
         '<div class="card-body">' +
           '<div class="card-top">' +
@@ -601,7 +806,7 @@
             '<span class="due">' + escapeHtml(due) + "</span>" +
           "</div>" +
           "<h3>" + escapeHtml(item.name) + "</h3>" +
-          '<div class="award">' + escapeHtml(award) + "</div>" +
+          '<div class="award">' + awardHtml(item) + "</div>" +
           '<div class="meta">' +
             '<span class="grades">' + escapeHtml(gradeLabel(item.grades)) + "</span>" +
             (item.sponsor ? '<span class="sponsor">' + escapeHtml(item.sponsor) + "</span>" : "") +
@@ -650,11 +855,13 @@
 
   function purseHtml(items, mode) {
     const m = moneySum(items);
-    const rides = m.fullRides ? '<span class="rides">+ ' + m.fullRides + " FULL RIDE</span>" : "";
+    const rides = m.fullRides
+      ? '<span class="rides"><span class="emo" aria-hidden="true">🏆</span> + ' + m.fullRides + " FULL RIDE</span>"
+      : "";
     if (mode === "goals") {
       return (
         '<div class="purse goals">' +
-          '<div class="purse-kicker">YOUR FUTURE</div>' +
+          '<div class="purse-kicker"><span class="emo" aria-hidden="true">🌟</span> YOUR FUTURE</div>' +
           '<div class="purse-amt">2 CAREER GOALS</div>' +
           '<div class="purse-sub">Not deadlines — aims worth chasing</div>' +
         "</div>"
@@ -666,9 +873,10 @@
       : "Rolling opportunities still in play";
     const n = items.filter(function (it) { return it.type !== "goal"; }).length;
     return (
-      '<div class="purse">' +
-        '<div class="purse-kicker">OPEN PURSE</div>' +
-        '<div class="purse-amt">' + amt + "</div>" +
+      '<div class="purse bling-purse">' +
+        '<div class="bling-marquee" aria-hidden="true"></div>' +
+        '<div class="purse-kicker"><span class="emo" aria-hidden="true">💰</span> OPEN PURSE</div>' +
+        '<div class="purse-amt shimmer">' + amt + "</div>" +
         '<div class="purse-sub">' + sub + " " + rides + "</div>" +
         '<div class="purse-count">' + n + " live " + (n === 1 ? "opportunity" : "opportunities") + "</div>" +
       "</div>"
@@ -770,6 +978,12 @@
       const tEl = root.querySelector("[data-clock-time]");
       if (dEl) dEl.textContent = partsClock.date;
       if (tEl) tEl.textContent = partsClock.time;
+      const heroName = (root.querySelector(".atbat h2") || {}).textContent || "";
+      if (startFlair._hero != null && heroName && heroName !== startFlair._hero) {
+        const layer = document.getElementById("flair");
+        if (layer) burstCoins(layer);
+      }
+      startFlair._hero = heroName;
       if (p.kind !== "dated") return;
       const parts = remainParts(p.at, now);
       const showSec = parts.days === 0;
@@ -800,9 +1014,9 @@
       const urg = urgency(next, now);
       heroInner =
         '<div class="atbat urg-' + urg + (today ? " due-today" : "") + '">' +
-          (today ? '<div class="today-banner">DUE TODAY</div>' : '<div class="atbat-kicker">NOW AT BAT</div>') +
+          (today ? '<div class="today-banner"><span class="emo" aria-hidden="true">💸</span> DUE TODAY <span class="emo" aria-hidden="true">🤑</span></div>' : '<div class="atbat-kicker">NOW AT BAT</div>') +
           "<h2>" + escapeHtml(next.name) + "</h2>" +
-          '<div class="atbat-award">' + escapeHtml(next.award || "") + " · " + escapeHtml(gradeLabel(next.grades)) + "</div>" +
+          '<div class="atbat-award">' + awardHtml(next, gradeLabel(next.grades)) + "</div>" +
           '<div class="countdown" data-countdown>' + countdownHtml(parts, parts.days === 0) + "</div>" +
           '<div class="atbat-due">' + escapeHtml(deadlineCue(next, now)) + "</div>" +
           '<div class="badge-row">' + badgesHtml(next, now) + "</div>" +
@@ -820,7 +1034,7 @@
       '<div class="led" aria-hidden="true"></div>' +
       '<header class="hdr">' +
         '<div class="brand">' +
-          '<div class="wordmark">MONEYBALL</div>' +
+          '<div class="wordmark">MONEYBALL <span class="emo" aria-hidden="true">💰</span></div>' +
           '<div class="tag">Donovan Catholic · Athens, GA</div>' +
         "</div>" +
         '<div class="hdr-mid">' +
@@ -856,6 +1070,8 @@
       "</footer>";
 
     bindClock(stage, next);
+    startFlair();
+    startSlotRolls(stage);
     startPager(document.getElementById("cards-port"), "x");
     /* Timeline: if it overflows, let it slowly scroll too */
     const tlPort = stage.querySelector(".tl-port");
@@ -898,7 +1114,7 @@
       const urg = urgency(next, now);
       heroInner =
         '<div class="atbat urg-' + urg + (today ? " due-today" : "") + '">' +
-          (today ? '<div class="today-banner">DUE TODAY</div>' : '<div class="atbat-kicker">NEXT DEADLINE</div>') +
+          (today ? '<div class="today-banner"><span class="emo" aria-hidden="true">💸</span> DUE TODAY <span class="emo" aria-hidden="true">🤑</span></div>' : '<div class="atbat-kicker">NEXT DEADLINE</div>') +
           "<h2>" + escapeHtml(next.name) + "</h2>" +
           '<div class="countdown" data-countdown>' + countdownHtml(parts, parts.days === 0) + "</div>" +
           '<div class="atbat-due">' + escapeHtml(deadlineCue(next, now)) + "</div>" +
@@ -917,7 +1133,7 @@
       '<div class="led" aria-hidden="true"></div>' +
       '<header class="hdr">' +
         '<div class="brand">' +
-          '<div class="wordmark">MONEYBALL</div>' +
+          '<div class="wordmark">MONEYBALL <span class="emo" aria-hidden="true">💰</span></div>' +
           '<div class="tag">' + escapeHtml(label) + "</div>" +
         "</div>" +
         '<div class="hdr-clock"><div class="clock" data-clock>' + escapeHtml(formatClock(now)) + "</div></div>" +
@@ -936,6 +1152,7 @@
       "</footer>";
 
     bindClock(stage, next);
+    startFlair();
     startPager(document.getElementById("cards-port"), layout === "strip" ? "x" : "y");
   }
 
@@ -969,6 +1186,7 @@
             : (document.body.getAttribute("data-layout") === "side" ? "y" : "x");
           startPager(port, axis);
         }
+        startSlotRolls(document.getElementById("stage"));
         fit();
         document.body.classList.add("ready");
       });
@@ -993,6 +1211,7 @@
     remainParts: remainParts,
     zonedDate: zonedDate,
     nextDated: nextDated,
+    awardTier: awardTier,
     loadData: loadData,
     FALLBACK: FALLBACK,
     CLASS_LABELS: CLASS_LABELS
